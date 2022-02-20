@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "SlideDesignUnlocker (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "SlideDesignUnlocker (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
