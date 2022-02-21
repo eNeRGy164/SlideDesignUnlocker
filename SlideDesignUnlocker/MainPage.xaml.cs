@@ -1,4 +1,4 @@
-using DocumentFormat.OpenXml.Packaging;
+﻿using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -15,9 +15,9 @@ public sealed partial class MainPage : Page
     public MainPage()
     {
         this.InitializeComponent();
-        
+
         this.ViewModel = new MainPageViewModel();
-        this.ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        this.ViewModel.PropertyChanged += this.OnViewModelPropertyChanged;
     }
 
     internal MainPageViewModel ViewModel { get; }
@@ -32,22 +32,22 @@ public sealed partial class MainPage : Page
         var file = await filePicker.PickSingleFileAsync();
         if (file != null)
         {
-            ViewModel.FilePath = file.Path;
+            this.ViewModel.FilePath = file.Path;
         }
     }
 
     internal void SaveFile(object _, RoutedEventArgs e)
-    { 
+    {
     }
 
     private void OnViewModelPropertyChanged(object? _, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(ViewModel.FilePath) && this.ViewModel.FilePath is not null)
+        if (e.PropertyName == nameof(this.ViewModel.FilePath) && this.ViewModel.FilePath is not null)
         {
-            ViewModel.SelectedShape = null;
-            ViewModel.SelectedSlide = null;
-            ViewModel.Slides.Clear();
-            ViewModel.Loading = true;
+            this.ViewModel.SelectedShape = null;
+            this.ViewModel.SelectedSlide = null;
+            this.ViewModel.Slides.Clear();
+            this.ViewModel.Loading = true;
 
             App.MainWindow.PresentationName = Path.GetFileName(this.ViewModel.FilePath);
 
@@ -80,25 +80,25 @@ public sealed partial class MainPage : Page
                 var model = new SlideModel
                 {
                     Title = SlideTitle(slide.Slide)
-            };
-
-            foreach (var shape in slide.Slide.Descendants<Shape>())
-            {
-                var shapeModel = new ShapeModel
-                {
-                    Name = shape.NonVisualShapeProperties?.NonVisualDrawingProperties?.Name,
-                    NoMove = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoMove ?? false,
-                    NoRotation = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoRotation ?? false,
-                    NoSelection = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoSelection ?? false,
-                    NoTextEdit = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoTextEdit ?? false,
-                    NoEditPoints = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoEditPoints ?? false,
-                    NoChangeShapeType = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoChangeShapeType ?? false,
-                    NoChangeArrowheads = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoChangeArrowheads ?? false,
-                    NoAdjustHandles = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoAdjustHandles ?? false,
-                    NoResize = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoResize ?? false
                 };
 
-                model.Shapes.Add(shapeModel);
+                foreach (var shape in slide.Slide.Descendants<Shape>())
+                {
+                    var shapeModel = new ShapeModel
+                    {
+                        Name = shape.NonVisualShapeProperties?.NonVisualDrawingProperties?.Name,
+                        NoMove = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoMove ?? false,
+                        NoRotation = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoRotation ?? false,
+                        NoSelection = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoSelection ?? false,
+                        NoTextEdit = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoTextEdit ?? false,
+                        NoEditPoints = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoEditPoints ?? false,
+                        NoChangeShapeType = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoChangeShapeType ?? false,
+                        NoChangeArrowheads = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoChangeArrowheads ?? false,
+                        NoAdjustHandles = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoAdjustHandles ?? false,
+                        NoResize = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoResize ?? false
+                    };
+
+                    model.Shapes.Add(shapeModel);
                 }
 
 
