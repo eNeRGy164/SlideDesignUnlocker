@@ -113,19 +113,21 @@ public sealed partial class MainPage : Page
     {
         var shapes = slide.Descendants<Shape>();
 
+        var title = string.Empty;
+
         foreach (var shape in shapes)
         {
             var placeholderShape = shape.NonVisualShapeProperties?.ApplicationNonVisualDrawingProperties?.GetFirstChild<PlaceholderShape>();
             if (placeholderShape != null && placeholderShape.Type != null && placeholderShape.Type.HasValue)
             {
-                return (PlaceholderValues)placeholderShape.Type switch
+                title = (PlaceholderValues)placeholderShape.Type switch
                 {
                     PlaceholderValues.Title or PlaceholderValues.CenteredTitle => new string(shape.TextBody?.Descendants<D.Paragraph>().SelectMany(p => p.Descendants<D.Text>().SelectMany(t => t.Text)).ToArray()),
-                    _ => string.Empty,
+                    _ => title,
                 };
             }
         }
 
-        return string.Empty;
+        return title;
     }
 }
