@@ -1,38 +1,23 @@
-using Microsoft.UI.Dispatching;
+﻿using Microsoft.UI.Dispatching;
 
-namespace SlideDesignUnlocker
+namespace SlideDesignUnlocker;
+
+[ObservableObject]
+internal partial class MainPageViewModel
 {
-    internal class MainPageViewModel : ObservableObject
-    {
-        private string? filePath;
-        private bool loading;
-        private SlideModel? selectedSlide;
-        private ShapeModel? selectedShape;
+    private readonly DispatcherQueue dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
-        internal ObservableCollection<SlideModel> Slides { get; } = new();
+    [ObservableProperty]
+    private string? filePath;
 
-        internal bool Loading
-        {
-            get => loading;
-            set => SetProperty(ref loading, value);
-        }
+    [ObservableProperty]
+    private bool loading;
 
-        internal string? FilePath
-        {
-            get => filePath;
-            set => SetProperty(ref filePath, value);
-        }
+    [ObservableProperty]
+    private SlideModel? selectedSlide;
 
-        internal SlideModel? SelectedSlide
-        {
-            get => selectedSlide;
-            set => SetProperty(ref selectedSlide, value);
-        }
+    [ObservableProperty]
+    private ShapeModel? selectedShape;
 
-        internal ShapeModel? SelectedShape
-        {
-            get => selectedShape;
-            set => SetProperty(ref selectedShape, value);
-        }
-    }
+    internal ObservableCollection<SlideModel> Slides { get; } = new();
 }

@@ -1,39 +1,26 @@
-namespace SlideDesignUnlocker;
+﻿namespace SlideDesignUnlocker;
 
-internal class SlideModel : ObservableObject
+[ObservableObject]
+internal partial class SlideModel
 {
+    [ObservableProperty]
     private string? title;
+
+    [ObservableProperty]
     private bool hasElementsWithLocks;
 
     public SlideModel()
     {
-        this.Shapes.CollectionChanged += (s, e) =>
+        this.Shapes.CollectionChanged += (_, e) =>
         {
-            if (e.Action == NotifyCollectionChangedAction.Reset)
+            HasElementsWithLocks = e.Action switch
             {
-                HasElementsWithLocks = false;
-            }
-            else if(e.Action == NotifyCollectionChangedAction.Add)
-            {
-                if (e.NewItems?.OfType<ShapeModel>().Any(s => s.HasLocks) ?? false)
-                {
-                    HasElementsWithLocks = true;
-                }
-            }
+                NotifyCollectionChangedAction.Reset => HasElementsWithLocks = false,
+                NotifyCollectionChangedAction.Add when e.NewItems?.OfType<ShapeModel>().Any(s => s.HasLocks) == true => true,
+                _ => HasElementsWithLocks,
+            };
         };
     }
 
-    public string? Title
-    {
-        get => title;
-        set => SetProperty(ref title, value);
-    }
-
-    public bool HasElementsWithLocks
-    {
-        get => hasElementsWithLocks;
-        set => SetProperty(ref hasElementsWithLocks, value);
-    }
-
-    public ObservableCollection<ShapeModel> Shapes { get; } = new();
+    public ObservableCollection<ShapeModel> Shapes { get; init; } = new();
 }
