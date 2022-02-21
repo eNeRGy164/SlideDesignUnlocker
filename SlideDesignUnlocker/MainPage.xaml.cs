@@ -1,4 +1,4 @@
-using DocumentFormat.OpenXml.Packaging;
+﻿using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -49,15 +49,13 @@ public sealed partial class MainPage : Page
             ViewModel.Slides.Clear();
             ViewModel.Loading = true;
 
-            LoadPresentation();
+            ThreadPool.QueueUserWorkItem<MainPageViewModel>(LoadPresentation, this.ViewModel, false);
         }
-
-        ViewModel.Loading = false;
     }
 
-    private void LoadPresentation()
+    private static void LoadPresentation(MainPageViewModel viewModel)
     {
-        PresentationDocument presentationDocument = PresentationDocument.Open(this.ViewModel.FilePath, false);
+        PresentationDocument presentationDocument = PresentationDocument.Open(viewModel.FilePath, false);
 
         var presentationPart = presentationDocument.PresentationPart;
 
@@ -87,8 +85,14 @@ public sealed partial class MainPage : Page
                 model.Shapes.Add(shapeModel);
             }
 
-            ViewModel.Slides.Add(model);
+            App.MainWindow!.DispatcherQueue.TryEnqueue(() => {
+                viewModel.Slides.Add(model); 
+            });
         }
+
+        App.MainWindow!.DispatcherQueue.TryEnqueue(() => {
+            viewModel.Loading = false;
+        });
     }
 
     private static string SlideTitle(Slide slide)
