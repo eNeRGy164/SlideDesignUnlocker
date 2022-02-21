@@ -65,12 +65,21 @@ public sealed partial class MainPage : Page
         }
 
         var presentationPart = presentationDocument.PresentationPart;
+        var presentation = presentationPart.Presentation;
 
-        foreach (var slide in presentationPart.SlideParts)
+        if (presentation.SlideIdList != null)
         {
-            var model = new SlideModel
+            // Get the title of each slide in the slide order.
+            foreach (var slideId in presentation.SlideIdList.Elements<SlideId>())
             {
-                Title = SlideTitle(slide.Slide)
+                if (presentationPart.GetPartById(slideId.RelationshipId!) is not SlidePart slide)
+                {
+                    continue;
+                }
+
+                var model = new SlideModel
+                {
+                    Title = SlideTitle(slide.Slide)
             };
 
             foreach (var shape in slide.Slide.Descendants<Shape>())
@@ -90,16 +99,14 @@ public sealed partial class MainPage : Page
                 };
 
                 model.Shapes.Add(shapeModel);
-            }
+                }
 
-            App.MainWindow!.DispatcherQueue.TryEnqueue(() => {
-                viewModel.Slides.Add(model); 
-            });
+
+                App.MainWindow.DispatcherQueue.TryEnqueue(() => { viewModel.Slides.Add(model); });
+            }
         }
 
-        App.MainWindow!.DispatcherQueue.TryEnqueue(() => {
-            viewModel.Loading = false;
-        });
+        App.MainWindow.DispatcherQueue.TryEnqueue(() => { viewModel.Loading = false; });
     }
 
     private static string SlideTitle(Slide slide)
