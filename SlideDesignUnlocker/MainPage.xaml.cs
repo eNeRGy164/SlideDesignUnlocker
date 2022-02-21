@@ -57,7 +57,12 @@ public sealed partial class MainPage : Page
 
     private static void LoadPresentation(MainPageViewModel viewModel)
     {
-        PresentationDocument presentationDocument = PresentationDocument.Open(viewModel.FilePath, false);
+        var presentationDocument = PresentationDocument.Open(viewModel.FilePath!, false);
+        if (presentationDocument.PresentationPart is null)
+        {
+            viewModel.Error = "Could not parse this presentation correctly";
+            return;
+        }
 
         var presentationPart = presentationDocument.PresentationPart;
 

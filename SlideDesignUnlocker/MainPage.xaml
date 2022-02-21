@@ -1,4 +1,4 @@
-﻿<Page
+<Page
     x:Class="SlideDesignUnlocker.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -12,13 +12,13 @@
     <Page.Resources>
         <DataTemplate x:Key="SlideListViewTemplate" x:DataType="local:SlideModel">
             <Grid>
-                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72E;" Visibility="{x:Bind HasElementsWithLocks, Mode=OneTime}" HorizontalAlignment="Left"/>
+                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72E;" Visibility="{x:Bind HasElementsWithLocks, Mode=OneTime}" HorizontalAlignment="Left" />
                 <TextBlock Text="{x:Bind Title}" Padding="30,0,0,0" />
             </Grid>
         </DataTemplate>
 
-        <converters:EmptyObjectToObjectConverter x:Key="HideEmptyConverter" EmptyValue="Collapsed" NotEmptyValue="Visible"/>
-        <converters:EmptyStringToObjectConverter x:Key="ShowEmptyConverter" EmptyValue="Collapsed" NotEmptyValue="Visible"/>
+        <converters:EmptyObjectToObjectConverter x:Key="HideEmptyConverter" EmptyValue="Collapsed" NotEmptyValue="Visible" />
+        <converters:EmptyStringToObjectConverter x:Key="ShowEmptyConverter" EmptyValue="Collapsed" NotEmptyValue="Visible" />
     </Page.Resources>
 
     <Grid>
@@ -109,6 +109,19 @@
             <ProgressRing Grid.RowSpan="2"
                           Grid.ColumnSpan="3"
                           IsActive="{x:Bind ViewModel.Loading, Mode=OneWay}" />
+            <StackPanel Grid.RowSpan="2"
+                        Grid.ColumnSpan="3"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Visibility="{x:Bind ViewModel.Error, Mode=OneWay, Converter={StaticResource ShowEmptyConverter}}">
+                <SymbolIcon Symbol="ReportHacked"
+                            Foreground="{ThemeResource SystemErrorTextColor}"
+                            Margin="0,0,8,0"/>
+                <TextBlock Text="{x:Bind ViewModel.Error}"
+                           VerticalAlignment="Center"
+                           Foreground="{ThemeResource SystemErrorTextColor}" />
+            </StackPanel>
         </Grid>
     </Grid>
 </Page>

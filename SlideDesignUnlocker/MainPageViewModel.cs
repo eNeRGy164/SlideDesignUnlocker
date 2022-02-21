@@ -7,6 +7,9 @@ internal partial class MainPageViewModel
     private string? filePath;
 
     [ObservableProperty]
+    private string error = string.Empty;
+
+    [ObservableProperty]
     private bool loading;
 
     [ObservableProperty]
