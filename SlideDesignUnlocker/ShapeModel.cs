@@ -1,5 +1,3 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-
 namespace SlideDesignUnlocker;
 
 internal class ShapeModel : ObservableObject

@@ -1,15 +1,12 @@
+using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
-using D = DocumentFormat.OpenXml.Drawing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
-using System.Linq;
+using System.ComponentModel;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
-using DocumentFormat.OpenXml.Packaging;
-using System.ComponentModel;
-using System.Threading.Tasks;
+using D = DocumentFormat.OpenXml.Drawing;
 
 namespace SlideDesignUnlocker;
 

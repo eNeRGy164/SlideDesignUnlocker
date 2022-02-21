@@ -1,8 +1,3 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System.Linq;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-
 namespace SlideDesignUnlocker;
 
 internal class SlideModel : ObservableObject
