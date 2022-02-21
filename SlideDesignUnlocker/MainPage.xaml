@@ -12,7 +12,7 @@
     <Page.Resources>
         <DataTemplate x:Key="SlideListViewTemplate" x:DataType="local:SlideModel">
             <Grid>
-                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72E;" Visibility="{x:Bind HasElementsWithLocks, Mode=OneWay}" HorizontalAlignment="Left"/>
+                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE72E;" Visibility="{x:Bind HasElementsWithLocks, Mode=OneTime}" HorizontalAlignment="Left"/>
                 <TextBlock Text="{x:Bind Title}" Padding="30,0,0,0" />
             </Grid>
         </DataTemplate>
@@ -69,7 +69,7 @@
                                     <TextBlock Text="{x:Bind Name}"/>
                                     <FontIcon FontFamily="Segoe MDL2 Assets" 
                                               Glyph="&#xE72E;" 
-                                              Visibility="{x:Bind HasLocks, Mode=OneWay}" 
+                                              Visibility="{x:Bind HasLocks, Mode=OneTime}" 
                                               HorizontalAlignment="Right"
                                               Margin="0,0,8,0"/>
                                 </Grid>
