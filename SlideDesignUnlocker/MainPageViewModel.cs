@@ -1,12 +1,8 @@
-﻿using Microsoft.UI.Dispatching;
-
 namespace SlideDesignUnlocker;
 
 [ObservableObject]
 internal partial class MainPageViewModel
 {
-    private readonly DispatcherQueue dispatcherQueue = DispatcherQueue.GetForCurrentThread();
-
     [ObservableProperty]
     private string? filePath;
 

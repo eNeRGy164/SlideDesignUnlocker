@@ -1,4 +1,4 @@
-﻿using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -49,7 +49,9 @@ public sealed partial class MainPage : Page
             ViewModel.Slides.Clear();
             ViewModel.Loading = true;
 
-            ThreadPool.QueueUserWorkItem<MainPageViewModel>(LoadPresentation, this.ViewModel, false);
+            App.MainWindow.PresentationName = Path.GetFileName(this.ViewModel.FilePath);
+
+            ThreadPool.QueueUserWorkItem(LoadPresentation, this.ViewModel, false);
         }
     }
 

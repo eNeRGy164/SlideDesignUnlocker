@@ -5,5 +5,25 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-    <Frame x:Name="RootFrame"/>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="32" />
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <StackPanel x:Name="AppTitleBar"
+                    Orientation="Horizontal">
+            <Image Source="Assets/Square44x44Logo.scale-200.png"
+                   HorizontalAlignment="Left"
+                   Width="16" Height="16"
+                   Margin="8,0"/>
+            <TextBlock Text="{x:Bind AppTitle, Mode=OneWay}"
+                       TextWrapping="NoWrap"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       VerticalAlignment="Center" />
+        </StackPanel>
+        
+        <Frame x:Name="RootFrame"
+               Grid.Row="1" />
+    </Grid>
 </Window>

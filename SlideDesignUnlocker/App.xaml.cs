@@ -9,7 +9,7 @@ public partial class App : Application
 {
     public static IntPtr WindowHandle { get; private set; }
 
-    internal static Window MainWindow { get; private set; } = default!;
+    internal static MainWindow MainWindow { get; private set; } = default!;
 
     /// <summary>
     /// Initializes the singleton application object.  This is the first line of authored code
