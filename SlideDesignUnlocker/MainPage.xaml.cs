@@ -40,6 +40,16 @@ public sealed partial class MainPage : Page
     {
     }
 
+    internal async void ShowAbout(object _, RoutedEventArgs e)
+    {
+        var aboutDialog = new AboutDialog
+        {
+            XamlRoot = this.XamlRoot
+        };
+
+        await aboutDialog.ShowAsync();
+    }
+
     private void OnViewModelPropertyChanged(object? _, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(this.ViewModel.FilePath) && this.ViewModel.FilePath is not null)

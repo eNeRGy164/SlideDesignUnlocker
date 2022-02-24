@@ -51,9 +51,4 @@
     <ProjectCapability Include="Msix" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Page Update="MainPage.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
 </Project>
