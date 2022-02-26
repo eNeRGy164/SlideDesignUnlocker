@@ -1,7 +1,6 @@
 ﻿namespace SlideDesignUnlocker;
 
-[ObservableObject]
-internal partial class SlideModel
+internal partial class SlideModel : ObservableRecipient, IRecipient<ShapeChangeStatusChanged>
 {
     [ObservableProperty]
     private string? title;
@@ -9,18 +8,41 @@ internal partial class SlideModel
     [ObservableProperty]
     private bool hasElementsWithLocks;
 
+    [ObservableProperty]
+    private bool hasElementsWithChanges;
+
+    private readonly HashSet<string> changedShapes = new();
+
+    public ObservableCollection<ShapeModel> Shapes { get; } = new();
+
     public SlideModel()
     {
+        WeakReferenceMessenger.Default.RegisterAll(this);
+
         this.Shapes.CollectionChanged += (_, e) =>
         {
-            HasElementsWithLocks = e.Action switch
+            this.HasElementsWithLocks = e.Action switch
             {
-                NotifyCollectionChangedAction.Reset => HasElementsWithLocks = false,
+                NotifyCollectionChangedAction.Reset => this.HasElementsWithLocks = false,
                 NotifyCollectionChangedAction.Add when e.NewItems?.OfType<ShapeModel>().Any(s => s.HasLocks) == true => true,
-                _ => HasElementsWithLocks,
+                _ => this.HasElementsWithLocks,
             };
         };
     }
 
-    public ObservableCollection<ShapeModel> Shapes { get; init; } = new();
+    public void Receive(ShapeChangeStatusChanged message)
+    {
+        if (message.Value.HasChanges)
+        {
+            this.changedShapes.Add(message.Value.Name!);
+        }
+        else
+        {
+            this.changedShapes.Remove(message.Value.Name!);
+        }
+
+        this.HasElementsWithChanges = this.changedShapes.Count > 0;
+
+        WeakReferenceMessenger.Default.Send(new SlideChangeStatusChanged(this));
+    }
 }

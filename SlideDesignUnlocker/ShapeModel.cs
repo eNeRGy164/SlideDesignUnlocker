@@ -1,4 +1,4 @@
-namespace SlideDesignUnlocker;
+﻿namespace SlideDesignUnlocker;
 
 [ObservableObject]
 internal partial class ShapeModel
@@ -6,9 +6,11 @@ internal partial class ShapeModel
     private readonly Dictionary<string, bool> InitialState = new();
 
     public ShapeModel()
-{
+    {
         this.PropertyChanged += (s, e) => {
             if (e.PropertyName == nameof(this.HasChanges)) {
+                WeakReferenceMessenger.Default.Send(new ShapeChangeStatusChanged(this));
+
                 return;
             };
 
@@ -21,7 +23,7 @@ internal partial class ShapeModel
     [ObservableProperty]
     [AlsoNotifyChangeFor(nameof(HasChanges))]
     private bool isDesignElement;
-    
+
     [ObservableProperty]
     [AlsoNotifyChangeFor(nameof(HasChanges))]
     private bool noResize;

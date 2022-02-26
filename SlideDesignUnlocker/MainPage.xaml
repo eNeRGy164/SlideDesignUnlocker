@@ -1,4 +1,4 @@
-<Page
+﻿<Page
     x:Class="SlideDesignUnlocker.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -13,6 +13,7 @@
         <converters:EmptyObjectToObjectConverter x:Key="HideEmptyConverter" EmptyValue="Collapsed" NotEmptyValue="Visible" />
         <converters:EmptyStringToObjectConverter x:Key="ShowEmptyConverter" EmptyValue="Collapsed" NotEmptyValue="Visible" />
         <converters:BoolToObjectConverter x:Key="UnsavedColorConverter" TrueValue="{StaticResource AccentTextFillColorPrimaryBrush}" FalseValue="{StaticResource TextFillColorPrimaryBrush}" />
+        <converters:BoolToObjectConverter x:Key="EnabledConverter" TrueValue="{StaticResource AppBarItemForegroundThemeBrush}" FalseValue="{StaticResource AppBarItemDisabledForegroundThemeBrush}" />
         <converters:BoolToObjectConverter x:Key="UnsavedFontStyleConverter" TrueValue="Italic" FalseValue="Normal" />
     </Page.Resources>
 
@@ -36,6 +37,8 @@
             <AppBarButton Label="Save As"
                           Click="SaveFile"
                           AccessKey="S"
+                          Foreground="{x:Bind ViewModel.SlidesChanged, Mode=OneWay, Converter={StaticResource EnabledConverter}}"
+                          IsEnabled="{x:Bind ViewModel.SlidesChanged, Mode=OneWay}"
                           Visibility="{x:Bind ViewModel.FilePath, Mode=OneWay, Converter={StaticResource ShowEmptyConverter}}">
                 <AppBarButton.Icon>
                     <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE792;"/>
@@ -107,8 +110,8 @@
                                                Foreground="{x:Bind HasChanges, Mode=OneWay, Converter={StaticResource UnsavedColorConverter}}"
                                                FontStyle="{x:Bind HasChanges, Mode=OneWay, Converter={StaticResource UnsavedFontStyleConverter}}"/>
                                     <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}"
-                                              Glyph="&#xE72E;" 
-                                              Visibility="{x:Bind HasLocks, Mode=OneTime}" 
+                                              Glyph="&#xE72E;"
+                                              Visibility="{x:Bind HasLocks, Mode=OneTime}"
                                               HorizontalAlignment="Right"
                                               Margin="0,0,8,0"/>
                                 </Grid>
