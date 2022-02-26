@@ -1,4 +1,4 @@
-using DocumentFormat.OpenXml;
+﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
 using Microsoft.UI.Xaml;
@@ -25,8 +25,14 @@ public sealed partial class MainPage : Page
 
     internal async void SelectFile(object _, RoutedEventArgs e)
     {
-        var filePicker = new FileOpenPicker();
-        filePicker.FileTypeFilter.Add(".pptx");
+        var filePicker = new FileOpenPicker
+        {
+            SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+            FileTypeFilter =
+            {
+                ".pptx"
+            }
+        };
 
         InitializeWithWindow.Initialize(filePicker, App.WindowHandle);
 
@@ -37,8 +43,20 @@ public sealed partial class MainPage : Page
         }
     }
 
-    internal void SaveFile(object _, RoutedEventArgs e)
+    internal async void SaveFile(object _, RoutedEventArgs e)
     {
+        var filePicker = new FileSavePicker
+        {
+            SuggestedFileName = $"{Path.GetFileNameWithoutExtension(this.ViewModel.FilePath)}.Fixed{Path.GetExtension(this.ViewModel.FilePath)}",
+            FileTypeChoices =
+            {
+                { "PowerPoint Presentation", new[] { ".pptx" } }
+            }
+        };
+
+        InitializeWithWindow.Initialize(filePicker, App.WindowHandle);
+
+        await filePicker.PickSaveFileAsync();
     }
 
     internal async void ShowAbout(object _, RoutedEventArgs e)
