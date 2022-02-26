@@ -20,9 +20,28 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <CommandBar DefaultLabelPosition="Right" HorizontalAlignment="Left">
-            <AppBarButton Icon="OpenFile" Label="Open" Click="SelectFile" AccessKey="O" />
-            <AppBarButton Icon="Save" Label="Save" Click="SaveFile" AccessKey="S" Visibility="{x:Bind ViewModel.FilePath, Mode=OneWay, Converter={StaticResource ShowEmptyConverter}}" />
+        <CommandBar DefaultLabelPosition="Right"
+                    HorizontalAlignment="Left">
+            <AppBarButton Icon="OpenFile"
+                          Label="Open"
+                          Click="SelectFile"
+                          AccessKey="O">
+                <AppBarButton.KeyboardAccelerators>
+                    <KeyboardAccelerator Modifiers="Control" Key="S"/>
+                </AppBarButton.KeyboardAccelerators>
+            </AppBarButton>
+            <AppBarSeparator Visibility="{x:Bind ViewModel.FilePath, Mode=OneWay, Converter={StaticResource ShowEmptyConverter}}" />
+            <AppBarButton Label="Save As"
+                          Click="SaveFile"
+                          AccessKey="S"
+                          Visibility="{x:Bind ViewModel.FilePath, Mode=OneWay, Converter={StaticResource ShowEmptyConverter}}">
+                <AppBarButton.Icon>
+                    <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE792;"/>
+                </AppBarButton.Icon>
+                <AppBarButton.KeyboardAccelerators>
+                    <KeyboardAccelerator Modifiers="Control" Key="S"/>
+                </AppBarButton.KeyboardAccelerators>
+            </AppBarButton>
             <AppBarSeparator/>
             <AppBarButton Label="About"
                           Click="ShowAbout"
@@ -30,6 +49,10 @@
                 <AppBarButton.Icon>
                     <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE946;"/>
                 </AppBarButton.Icon>
+                <AppBarButton.KeyboardAccelerators>
+                    <KeyboardAccelerator Key="F1"/>
+                </AppBarButton.KeyboardAccelerators>
+            </AppBarButton>
         </CommandBar>
 
         <Grid Grid.Row="1">
