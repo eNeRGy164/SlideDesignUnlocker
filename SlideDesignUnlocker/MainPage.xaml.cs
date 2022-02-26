@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -12,6 +13,8 @@ namespace SlideDesignUnlocker;
 
 public sealed partial class MainPage : Page
 {
+    internal MainPageViewModel ViewModel { get; }
+
     public MainPage()
     {
         this.InitializeComponent();
@@ -19,8 +22,6 @@ public sealed partial class MainPage : Page
         this.ViewModel = new MainPageViewModel();
         this.ViewModel.PropertyChanged += this.OnViewModelPropertyChanged;
     }
-
-    internal MainPageViewModel ViewModel { get; }
 
     internal async void SelectFile(object _, RoutedEventArgs e)
     {
@@ -99,20 +100,22 @@ public sealed partial class MainPage : Page
                         Name = shape.NonVisualShapeProperties?.NonVisualDrawingProperties?.Name,
                         NoMove = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoMove ?? false,
                         NoRotation = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoRotation ?? false,
-                        NoSelection = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoSelection ?? false,
                         NoTextEdit = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoTextEdit ?? false,
                         NoEditPoints = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoEditPoints ?? false,
                         NoChangeShapeType = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoChangeShapeType ?? false,
                         NoChangeArrowheads = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoChangeArrowheads ?? false,
                         NoAdjustHandles = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoAdjustHandles ?? false,
-                        NoResize = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoResize ?? false
+                        NoResize = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoResize ?? false,
+                        // OpenXmlSdk can't resolve `DesignElement`, so we have to be a bit hacky
+                        IsDesignElement = shape.NonVisualShapeProperties?.ApplicationNonVisualDrawingProperties?.Descendants<OpenXmlUnknownElement>().Any(e => e.LocalName == "designElem" && e.HasAttributes && e.GetAttribute("val", default!).Value == "1") ?? false
                     };
 
-                    model.Shapes.Add(shapeModel);
+                    // Shapes are in order from bottom to top
+                    model.Shapes.Insert(0, shapeModel);
                 }
 
 
-                App.MainWindow.DispatcherQueue.TryEnqueue(() => { viewModel.Slides.Add(model); });
+                App.MainWindow.DispatcherQueue.TryEnqueue(() => viewModel.Slides.Add(model));
             }
         }
 
@@ -121,10 +124,9 @@ public sealed partial class MainPage : Page
 
     private static string SlideTitle(Slide slide)
     {
-        var shapes = slide.Descendants<Shape>();
-
         var title = string.Empty;
 
+        var shapes = slide.Descendants<Shape>();
         foreach (var shape in shapes)
         {
             var placeholderShape = shape.NonVisualShapeProperties?.ApplicationNonVisualDrawingProperties?.GetFirstChild<PlaceholderShape>();

@@ -12,6 +12,8 @@
     <Page.Resources>
         <converters:EmptyObjectToObjectConverter x:Key="HideEmptyConverter" EmptyValue="Collapsed" NotEmptyValue="Visible" />
         <converters:EmptyStringToObjectConverter x:Key="ShowEmptyConverter" EmptyValue="Collapsed" NotEmptyValue="Visible" />
+        <converters:BoolToObjectConverter x:Key="UnsavedColorConverter" TrueValue="{StaticResource AccentTextFillColorPrimaryBrush}" FalseValue="{StaticResource TextFillColorPrimaryBrush}" />
+        <converters:BoolToObjectConverter x:Key="UnsavedFontStyleConverter" TrueValue="Italic" FalseValue="Normal" />
     </Page.Resources>
 
     <Grid>
@@ -101,8 +103,10 @@
                         <TreeViewItem>
                             <TreeViewItem.Content>
                                 <Grid>
-                                    <TextBlock Text="{x:Bind Name}"/>
-                                    <FontIcon FontFamily="Segoe MDL2 Assets" 
+                                    <TextBlock Text="{x:Bind Name, Mode=OneWay}"
+                                               Foreground="{x:Bind HasChanges, Mode=OneWay, Converter={StaticResource UnsavedColorConverter}}"
+                                               FontStyle="{x:Bind HasChanges, Mode=OneWay, Converter={StaticResource UnsavedFontStyleConverter}}"/>
+                                    <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}"
                                               Glyph="&#xE72E;" 
                                               Visibility="{x:Bind HasLocks, Mode=OneTime}" 
                                               HorizontalAlignment="Right"
@@ -122,14 +126,14 @@
                         Grid.Row="1"
                         Visibility="{x:Bind ViewModel.SelectedShape, Mode=OneWay, Converter={StaticResource HideEmptyConverter}}"
                         Padding="{ThemeResource TextControlThemePadding}">
+                <ToggleSwitch Header="Is a design element"
+                              IsOn="{x:Bind ViewModel.SelectedShape.IsDesignElement, Mode=TwoWay}" />
                 <ToggleSwitch Header="Disable moving"
                               IsOn="{x:Bind ViewModel.SelectedShape.NoMove, Mode=TwoWay}" />
                 <ToggleSwitch Header="Disable resizing" 
                               IsOn="{x:Bind ViewModel.SelectedShape.NoResize, Mode=TwoWay}" />
                 <ToggleSwitch Header="Disable rotation" 
                               IsOn="{x:Bind ViewModel.SelectedShape.NoRotation, Mode=TwoWay}" />
-                <ToggleSwitch Header="Disable selection" 
-                              IsOn="{x:Bind ViewModel.SelectedShape.NoSelection, Mode=TwoWay}" />
                 <ToggleSwitch Header="Disable point editing" 
                               IsOn="{x:Bind ViewModel.SelectedShape.NoEditPoints, Mode=TwoWay}" />
                 <ToggleSwitch Header="Disable adjust handles" 
