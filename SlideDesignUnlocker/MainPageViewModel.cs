@@ -1,7 +1,6 @@
 namespace SlideDesignUnlocker;
 
-[ObservableObject]
-internal partial class MainPageViewModel : IRecipient<SlideChangeStatusChanged>
+internal partial class MainPageViewModel : ObservableObject, IRecipient<SlideChangeStatusChanged>
 {
     public MainPageViewModel()
     {
@@ -9,24 +8,35 @@ internal partial class MainPageViewModel : IRecipient<SlideChangeStatusChanged>
     }
 
     [ObservableProperty]
-    private string? filePath;
+    public partial string? FilePath { get; set; }
+
+    /// <summary>
+    /// Stores the hash of the file when it was opened, used to detect external modifications.
+    /// </summary>
+    internal string? FileHash { get; set; }
 
     [ObservableProperty]
-    private string error = string.Empty;
+    public partial string? Error { get; set; }
 
     [ObservableProperty]
-    private bool loading;
+    public partial string? StatusMessage { get; set; }
 
     [ObservableProperty]
-    private SlideModel? selectedSlide;
+    public partial bool Loading { get; set; }
 
     [ObservableProperty]
-    private ShapeModel? selectedShape;
+    public partial bool Saving { get; set; }
 
     [ObservableProperty]
-    private bool slidesChanged;
+    public partial SlideModel? SelectedSlide { get; set; }
 
-    internal ObservableCollection<SlideModel> Slides { get; } = new();
+    [ObservableProperty]
+    public partial ShapeModel? SelectedShape { get; set; }
+
+    [ObservableProperty]
+    public partial bool SlidesChanged { get; set; }
+
+    internal ObservableCollection<SlideModel> Slides { get; } = [];
 
     public void Receive(SlideChangeStatusChanged _)
     {

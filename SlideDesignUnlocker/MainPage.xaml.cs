@@ -1,13 +1,9 @@
-﻿using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Packaging;
-using DocumentFormat.OpenXml.Presentation;
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System.ComponentModel;
-using System.Runtime.InteropServices.WindowsRuntime;
+using System.Security.Cryptography;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
-using D = DocumentFormat.OpenXml.Drawing;
 
 namespace SlideDesignUnlocker;
 
@@ -25,46 +21,155 @@ public sealed partial class MainPage : Page
 
     internal async void SelectFile(object _, RoutedEventArgs e)
     {
-        var filePicker = new FileOpenPicker
+        var filePicker = new FileOpenPicker()
         {
             SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
-            FileTypeFilter =
-            {
-                ".pptx"
-            }
+            FileTypeFilter = { ".pptx" }
         };
 
         InitializeWithWindow.Initialize(filePicker, App.WindowHandle);
 
         var file = await filePicker.PickSingleFileAsync();
-        if (file != null)
+        if (file is not null)
         {
+            this.ViewModel.FileHash = ComputeFileHash(file.Path);
             this.ViewModel.FilePath = file.Path;
         }
     }
 
-    internal async void SaveFile(object _, RoutedEventArgs e)
+    internal void CloseFile(object _, RoutedEventArgs e)
     {
-        var filePicker = new FileSavePicker
+        this.ViewModel.FilePath = null;
+        this.ViewModel.FileHash = null;
+        this.ViewModel.SelectedSlide = null;
+        this.ViewModel.SelectedShape = null;
+        this.ViewModel.Slides.Clear();
+        this.ViewModel.SlidesChanged = false;
+        this.ViewModel.Error = string.Empty;
+        this.ViewModel.StatusMessage = string.Empty;
+        App.MainWindow.PresentationName = null;
+    }
+
+    internal void SaveFile(SplitButton _, SplitButtonClickEventArgs e) => this.SaveFile();
+
+    internal void SaveFile(object _, RoutedEventArgs e) => this.SaveFile();
+
+    private async void SaveFile()
+    {
+        var currentHash = ComputeFileHash(this.ViewModel.FilePath!);
+
+        var fileWasModifiedExternally = currentHash != this.ViewModel.FileHash;
+        if (fileWasModifiedExternally)
+        {
+            var dialog = new ContentDialog()
+            {
+                XamlRoot = this.XamlRoot,
+                Title = "File Modified Externally",
+                Content = "The file has been modified since you opened it. Do you want to overwrite the changes or save as a new file?",
+                PrimaryButtonText = "Overwrite",
+                SecondaryButtonText = "Save As",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Secondary
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.None)
+            {
+                return;
+            }
+
+            if (result == ContentDialogResult.Secondary)
+            {
+                await this.PickAndSaveFile();
+                return;
+            }
+        }
+
+        await this.SaveToFile(this.ViewModel.FilePath!);
+    }
+
+    internal async void SaveFileAs(object _, RoutedEventArgs e)
+    {
+        await this.PickAndSaveFile();
+    }
+
+    private async Task PickAndSaveFile()
+    {
+        var filePicker = new FileSavePicker()
         {
             SuggestedFileName = $"{Path.GetFileNameWithoutExtension(this.ViewModel.FilePath)}.Fixed{Path.GetExtension(this.ViewModel.FilePath)}",
             FileTypeChoices =
             {
-                { "PowerPoint Presentation", new[] { ".pptx" } }
+                { "PowerPoint Presentation", [".pptx"] }
             }
         };
 
         InitializeWithWindow.Initialize(filePicker, App.WindowHandle);
 
-        await filePicker.PickSaveFileAsync();
+        var file = await filePicker.PickSaveFileAsync();
+        if (file is not null)
+        {
+            await this.SaveToFile(file.Path);
+        }
+    }
+
+    private async Task SaveToFile(string targetPath)
+    {
+        var sourcePath = this.ViewModel.FilePath!;
+        var savingToSameFile = string.Equals(sourcePath, targetPath, StringComparison.OrdinalIgnoreCase);
+        var workingPath = savingToSameFile
+            ? Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}{Path.GetExtension(sourcePath)}")
+            : targetPath;
+
+        this.ViewModel.Saving = true;
+        this.ViewModel.StatusMessage = string.Empty;
+        this.ViewModel.Error = string.Empty;
+
+        try
+        {
+            File.Copy(sourcePath, workingPath, overwrite: true);
+
+            PresentationService.SaveChangesToPresentation(workingPath, this.ViewModel.Slides);
+
+            if (savingToSameFile)
+            {
+                File.Copy(workingPath, targetPath, overwrite: true);
+                File.Delete(workingPath);
+            }
+
+            this.ViewModel.FileHash = ComputeFileHash(targetPath);
+
+            if (!savingToSameFile)
+            {
+                this.ViewModel.FilePath = targetPath;
+            }
+            else
+            {
+                this.ReloadPresentation();
+            }
+
+            this.ShowStatusMessage("File saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            this.ViewModel.Error = $"Failed to save: {ex.Message}";
+
+            if (savingToSameFile && File.Exists(workingPath))
+            {
+                try { File.Delete(workingPath); } catch { }
+            }
+        }
+        finally
+        {
+            this.ViewModel.Saving = false;
+        }
+
+        await Task.CompletedTask;
     }
 
     internal async void ShowAbout(object _, RoutedEventArgs e)
     {
-        var aboutDialog = new AboutDialog
-        {
-            XamlRoot = this.XamlRoot
-        };
+        var aboutDialog = new AboutDialog { XamlRoot = this.XamlRoot };
 
         await aboutDialog.ShowAsync();
     }
@@ -73,91 +178,44 @@ public sealed partial class MainPage : Page
     {
         if (e.PropertyName == nameof(this.ViewModel.FilePath) && this.ViewModel.FilePath is not null)
         {
-            this.ViewModel.SelectedShape = null;
-            this.ViewModel.SelectedSlide = null;
-            this.ViewModel.Slides.Clear();
-            this.ViewModel.Loading = true;
-
-            App.MainWindow.PresentationName = Path.GetFileName(this.ViewModel.FilePath);
-
-            ThreadPool.QueueUserWorkItem(LoadPresentation, this.ViewModel, false);
+            this.ReloadPresentation();
         }
     }
 
-    private static void LoadPresentation(MainPageViewModel viewModel)
+    private void ReloadPresentation()
     {
-        var presentationDocument = PresentationDocument.Open(viewModel.FilePath!, false);
-        if (presentationDocument.PresentationPart is null)
-        {
-            viewModel.Error = "Could not parse this presentation correctly";
-            return;
-        }
+        this.ViewModel.SelectedShape = null;
+        this.ViewModel.SelectedSlide = null;
+        this.ViewModel.Slides.Clear();
+        this.ViewModel.Loading = true;
 
-        var presentationPart = presentationDocument.PresentationPart;
-        var presentation = presentationPart.Presentation;
+        App.MainWindow.PresentationName = Path.GetFileName(this.ViewModel.FilePath);
 
-        if (presentation.SlideIdList != null)
-        {
-            // Get the title of each slide in the slide order.
-            foreach (var slideId in presentation.SlideIdList.Elements<SlideId>())
-            {
-                if (presentationPart.GetPartById(slideId.RelationshipId!) is not SlidePart slide)
-                {
-                    continue;
-                }
-
-                var model = new SlideModel
-                {
-                    Title = SlideTitle(slide.Slide)
-                };
-
-                foreach (var shape in slide.Slide.Descendants<Shape>())
-                {
-                    var shapeModel = new ShapeModel
-                    {
-                        Name = shape.NonVisualShapeProperties?.NonVisualDrawingProperties?.Name,
-                        NoMove = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoMove ?? false,
-                        NoRotation = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoRotation ?? false,
-                        NoTextEdit = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoTextEdit ?? false,
-                        NoEditPoints = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoEditPoints ?? false,
-                        NoChangeShapeType = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoChangeShapeType ?? false,
-                        NoChangeArrowheads = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoChangeArrowheads ?? false,
-                        NoAdjustHandles = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoAdjustHandles ?? false,
-                        NoResize = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoResize ?? false,
-                        // OpenXmlSdk can't resolve `DesignElement`, so we have to be a bit hacky
-                        IsDesignElement = shape.NonVisualShapeProperties?.ApplicationNonVisualDrawingProperties?.Descendants<OpenXmlUnknownElement>().Any(e => e.LocalName == "designElem" && e.HasAttributes && e.GetAttribute("val", default!).Value == "1") ?? false
-                    };
-
-                    // Shapes are in order from bottom to top
-                    model.Shapes.Insert(0, shapeModel);
-                }
-
-
-                App.MainWindow.DispatcherQueue.TryEnqueue(() => viewModel.Slides.Add(model));
-            }
-        }
-
-        App.MainWindow.DispatcherQueue.TryEnqueue(() => { viewModel.Loading = false; });
+        ThreadPool.QueueUserWorkItem(PresentationService.LoadPresentation, this.ViewModel, false);
     }
 
-    private static string SlideTitle(Slide slide)
+    private static string? ComputeFileHash(string filePath)
     {
-        var title = string.Empty;
-
-        var shapes = slide.Descendants<Shape>();
-        foreach (var shape in shapes)
+        try
         {
-            var placeholderShape = shape.NonVisualShapeProperties?.ApplicationNonVisualDrawingProperties?.GetFirstChild<PlaceholderShape>();
-            if (placeholderShape != null && placeholderShape.Type != null && placeholderShape.Type.HasValue)
-            {
-                title = (PlaceholderValues)placeholderShape.Type switch
-                {
-                    PlaceholderValues.Title or PlaceholderValues.CenteredTitle => new string(shape.TextBody?.Descendants<D.Paragraph>().SelectMany(p => p.Descendants<D.Text>().SelectMany(t => t.Text)).ToArray()),
-                    _ => title,
-                };
-            }
+            using var stream = File.OpenRead(filePath);
+            var hash = SHA256.HashData(stream);
+            return Convert.ToHexString(hash);
         }
+        catch
+        {
+            return null;
+        }
+    }
 
-        return title;
+    private async void ShowStatusMessage(string message, int autoHideDelayMs = 3000)
+    {
+        this.ViewModel.StatusMessage = message;
+        await Task.Delay(autoHideDelayMs);
+
+        if (this.ViewModel.StatusMessage == message)
+        {
+            this.ViewModel.StatusMessage = string.Empty;
+        }
     }
 }

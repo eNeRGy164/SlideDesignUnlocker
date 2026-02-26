@@ -1,62 +1,113 @@
 ﻿namespace SlideDesignUnlocker;
 
-[ObservableObject]
-internal partial class ShapeModel
+internal partial class ShapeModel : ObservableObject
 {
-    private readonly Dictionary<string, bool> InitialState = new();
+    private bool initialStateCaptured;
+    private bool initialIsDesignElement;
+    private bool initialNoResize;
+    private bool initialNoMove;
+    private bool initialNoRotation;
+    private bool initialNoEditPoints;
+    private bool initialNoChangeShapeType;
+    private bool initialNoAdjustHandles;
+    private bool initialNoChangeArrowheads;
+    private bool initialNoTextEdit;
 
     public ShapeModel()
     {
-        this.PropertyChanged += (s, e) => {
-            if (e.PropertyName == nameof(this.HasChanges)) {
+        this.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(this.HasChanges))
+            {
                 WeakReferenceMessenger.Default.Send(new ShapeChangeStatusChanged(this));
-
-                return;
-            };
-
-            this.InitialState.TryAdd(e.PropertyName!, (bool)typeof(ShapeModel).GetProperty(e.PropertyName!)!.GetValue(s)!);
+            }
         };
     }
+
+    /// <summary>
+    /// Call this after loading is complete to capture the initial state for change tracking.
+    /// </summary>
+    public void CaptureInitialState()
+    {
+        this.initialIsDesignElement = this.IsDesignElement;
+        this.initialNoResize = this.NoResize;
+        this.initialNoMove = this.NoMove;
+        this.initialNoRotation = this.NoRotation;
+        this.initialNoEditPoints = this.NoEditPoints;
+        this.initialNoChangeShapeType = this.NoChangeShapeType;
+        this.initialNoAdjustHandles = this.NoAdjustHandles;
+        this.initialNoChangeArrowheads = this.NoChangeArrowheads;
+        this.initialNoTextEdit = this.NoTextEdit;
+        this.initialStateCaptured = true;
+
+        // Notify that computed properties may have changed
+        this.OnPropertyChanged(nameof(this.HasChanges));
+        this.OnPropertyChanged(nameof(this.HasLocks));
+    }
+
+    /// <summary>
+    /// The unique identifier of this shape within the slide.
+    /// </summary>
+    public uint ShapeId { get; set; }
 
     public string? Name { get; set; }
 
     [ObservableProperty]
-    [AlsoNotifyChangeFor(nameof(HasChanges))]
-    private bool isDesignElement;
+    [NotifyPropertyChangedFor(nameof(HasChanges))]
+    public partial bool IsDesignElement { get; set; }
 
     [ObservableProperty]
-    [AlsoNotifyChangeFor(nameof(HasChanges))]
-    private bool noResize;
+    [NotifyPropertyChangedFor(nameof(HasChanges))]
+    public partial bool NoResize { get; set; }
 
     [ObservableProperty]
-    [AlsoNotifyChangeFor(nameof(HasChanges))]
-    private bool noMove;
+    [NotifyPropertyChangedFor(nameof(HasChanges))]
+    public partial bool NoMove { get; set; }
 
     [ObservableProperty]
-    [AlsoNotifyChangeFor(nameof(HasChanges))]
-    private bool noRotation;
+    [NotifyPropertyChangedFor(nameof(HasChanges))]
+    public partial bool NoRotation { get; set; }
 
     [ObservableProperty]
-    [AlsoNotifyChangeFor(nameof(HasChanges))]
-    private bool noEditPoints;
+    [NotifyPropertyChangedFor(nameof(HasChanges))]
+    public partial bool NoEditPoints { get; set; }
 
     [ObservableProperty]
-    [AlsoNotifyChangeFor(nameof(HasChanges))]
-    private bool noChangeShapeType;
+    [NotifyPropertyChangedFor(nameof(HasChanges))]
+    public partial bool NoChangeShapeType { get; set; }
 
     [ObservableProperty]
-    [AlsoNotifyChangeFor(nameof(HasChanges))]
-    private bool noAdjustHandles;
+    [NotifyPropertyChangedFor(nameof(HasChanges))]
+    public partial bool NoAdjustHandles { get; set; }
 
     [ObservableProperty]
-    [AlsoNotifyChangeFor(nameof(HasChanges))]
-    private bool noChangeArrowheads;
+    [NotifyPropertyChangedFor(nameof(HasChanges))]
+    public partial bool NoChangeArrowheads { get; set; }
 
     [ObservableProperty]
-    [AlsoNotifyChangeFor(nameof(HasChanges))]
-    private bool noTextEdit;
+    [NotifyPropertyChangedFor(nameof(HasChanges))]
+    public partial bool NoTextEdit { get; set; }
 
-    public bool HasLocks => this.InitialState.Values.Any(v => v == true);
+    public bool HasLocks =>
+        this.initialIsDesignElement ||
+        this.initialNoResize ||
+        this.initialNoMove ||
+        this.initialNoRotation ||
+        this.initialNoEditPoints ||
+        this.initialNoChangeShapeType ||
+        this.initialNoAdjustHandles ||
+        this.initialNoChangeArrowheads ||
+        this.initialNoTextEdit;
 
-    public bool HasChanges => this.InitialState.Any(kv => ((bool)typeof(ShapeModel).GetProperty(kv.Key)!.GetValue(this)!) != kv.Value);
+    public bool HasChanges =>
+        this.initialStateCaptured && (
+            this.IsDesignElement != this.initialIsDesignElement ||
+            this.NoResize != this.initialNoResize ||
+            this.NoMove != this.initialNoMove ||
+            this.NoRotation != this.initialNoRotation ||
+            this.NoEditPoints != this.initialNoEditPoints ||
+            this.NoChangeShapeType != this.initialNoChangeShapeType ||
+            this.NoAdjustHandles != this.initialNoAdjustHandles ||
+            this.NoChangeArrowheads != this.initialNoChangeArrowheads ||
+            this.NoTextEdit != this.initialNoTextEdit);
 }
