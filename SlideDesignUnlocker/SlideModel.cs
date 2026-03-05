@@ -22,7 +22,7 @@ internal partial class SlideModel : ObservableRecipient, IRecipient<ShapeChangeS
 
     public SlideModel()
     {
-        WeakReferenceMessenger.Default.RegisterAll(this);
+        WeakReferenceMessenger.Default.Register<ShapeChangeStatusChanged>(this);
 
         this.Shapes.CollectionChanged += (_, args) =>
         {

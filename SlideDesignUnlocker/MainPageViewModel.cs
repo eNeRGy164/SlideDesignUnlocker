@@ -4,7 +4,7 @@ internal partial class MainPageViewModel : ObservableObject, IRecipient<SlideCha
 {
     public MainPageViewModel()
     {
-        WeakReferenceMessenger.Default.RegisterAll(this);
+        WeakReferenceMessenger.Default.Register<SlideChangeStatusChanged>(this);
     }
 
     [ObservableProperty]
