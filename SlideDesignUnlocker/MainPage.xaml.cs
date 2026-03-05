@@ -56,58 +56,83 @@ public sealed partial class MainPage : Page
 
     private async void SaveFile()
     {
-        var currentHash = ComputeFileHash(this.ViewModel.FilePath!);
-
-        var fileWasModifiedExternally = currentHash != this.ViewModel.FileHash;
-        if (fileWasModifiedExternally)
+        if (string.IsNullOrWhiteSpace(this.ViewModel.FilePath))
         {
-            var dialog = new ContentDialog()
-            {
-                XamlRoot = this.XamlRoot,
-                Title = "File Modified Externally",
-                Content = "The file has been modified since you opened it. Do you want to overwrite the changes or save as a new file?",
-                PrimaryButtonText = "Overwrite",
-                SecondaryButtonText = "Save As",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Secondary
-            };
-
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.None)
-            {
-                return;
-            }
-
-            if (result == ContentDialogResult.Secondary)
-            {
-                await this.PickAndSaveFile();
-                return;
-            }
+            this.ViewModel.Error = "No presentation is open.";
+            return;
         }
 
-        await this.SaveToFile(this.ViewModel.FilePath!);
+        try
+        {
+            var currentHash = ComputeFileHash(this.ViewModel.FilePath);
+
+            var fileWasModifiedExternally = currentHash != this.ViewModel.FileHash;
+            if (fileWasModifiedExternally)
+            {
+                var dialog = new ContentDialog()
+                {
+                    XamlRoot = this.XamlRoot,
+                    Title = "File Modified Externally",
+                    Content = "The file has been modified since you opened it. Do you want to overwrite the changes or save as a new file?",
+                    PrimaryButtonText = "Overwrite",
+                    SecondaryButtonText = "Save As",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Secondary
+                };
+
+                var result = await dialog.ShowAsync();
+                if (result == ContentDialogResult.None)
+                {
+                    return;
+                }
+
+                if (result == ContentDialogResult.Secondary)
+                {
+                    await this.PickAndSaveFile();
+                    return;
+                }
+            }
+
+            await this.SaveToFile(this.ViewModel.FilePath);
+        }
+        catch (Exception ex)
+        {
+            this.ViewModel.Error = $"Failed to save: {ex.Message}";
+        }
     }
 
     internal async void SaveFileAs(object _, RoutedEventArgs e)
     {
-        await this.PickAndSaveFile();
+        try
+        {
+            await this.PickAndSaveFile();
+        }
+        catch (Exception ex)
+        {
+            this.ViewModel.Error = $"Failed to choose a save location: {ex.Message}";
+        }
     }
 
     private async Task PickAndSaveFile()
     {
+        if (string.IsNullOrWhiteSpace(this.ViewModel.FilePath))
+        {
+            this.ViewModel.Error = "No presentation is open.";
+            return;
+        }
+
         var filePicker = new FileSavePicker()
         {
-            SuggestedFileName = $"{Path.GetFileNameWithoutExtension(this.ViewModel.FilePath)}.Fixed{Path.GetExtension(this.ViewModel.FilePath)}",
-            FileTypeChoices =
-            {
-                { "PowerPoint Presentation", [".pptx"] }
-            }
+            SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+            SuggestedFileName = $"{Path.GetFileNameWithoutExtension(this.ViewModel.FilePath)}.Fixed",
+            DefaultFileExtension = ".pptx"
         };
+        filePicker.FileTypeChoices.Add("PowerPoint Presentation", new List<string> { ".pptx" });
 
         InitializeWithWindow.Initialize(filePicker, App.WindowHandle);
 
         var file = await filePicker.PickSaveFileAsync();
-        if (file is not null)
+        if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
             await this.SaveToFile(file.Path);
         }
