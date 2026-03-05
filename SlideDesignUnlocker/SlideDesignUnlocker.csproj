@@ -10,13 +10,14 @@
     <LangVersion>preview</LangVersion>
 
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\App.ico</ApplicationIcon>
     <Platforms>x86;x64;arm64</Platforms>
     <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
     <EnablePreviewMsixTooling>true</EnablePreviewMsixTooling>
 
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
-    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxSymbolPackageEnabled>True</AppxSymbolPackageEnabled>
     <GenerateTestArtifacts>True</GenerateTestArtifacts>
     <AppxBundle>Never</AppxBundle>
@@ -28,17 +29,48 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
-    <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
+    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+    <AppxPackageSigningTimestampDigestAlgorithm>SHA512</AppxPackageSigningTimestampDigestAlgorithm>
+    <PackageCertificateThumbprint>36C30E04845630F1F3268E44780866CA0CC6040D</PackageCertificateThumbprint>
   </PropertyGroup>
 
+  <!--
+    Release builds are self-contained so there is no external .NET Desktop Runtime
+    dependency (Microsoft Store policy 10.2.4.1).  PublishTrimmed only takes effect
+    during 'dotnet publish'; regular builds include the runtime but skip trimming.
+    Use the CreateStorePackages target for fully-optimised MSIX packages.
+  -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <!-- Self-contained .NET runtime: eliminates the external desktop runtime dependency -->
+    <SelfContained>true</SelfContained>
+
+    <!-- Do NOT bundle the Windows App SDK runtime; it is delivered as a Store framework package -->
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+
+    <!-- Trimming: remove unused code to minimise package size (publish-only) -->
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>full</TrimMode>
+    <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
+
+    <!-- Globalization: use invariant mode to exclude ICU / regional data -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- Exclude debug-only native libraries from the MSIX payload (reduces WACK warnings and package size) -->
+  <Target Name="_ExcludeDebugNativeLibraries" AfterTargets="_ComputeAppxPackagePayload"
+          Condition="'$(Configuration)' == 'Release'">
+    <ItemGroup>
+      <AppxPackagePayload Remove="@(AppxPackagePayload)"
+          Condition="'%(Filename)' == 'mscordbi' or $([System.String]::Copy('%(Filename)').StartsWith('Microsoft.DiaSymReader.Native'))" />
+    </ItemGroup>
+  </Target>
+
   <ItemGroup>
-    <Content Include="Assets\SplashScreen.scale-200.png" />
-    <Content Include="Assets\LockScreenLogo.scale-200.png" />
-    <Content Include="Assets\Square150x150Logo.scale-200.png" />
-    <Content Include="Assets\Square44x44Logo.scale-200.png" />
-    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
-    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
+    <None Update="Assets\App.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+
   </ItemGroup>
 
   <ItemGroup>
