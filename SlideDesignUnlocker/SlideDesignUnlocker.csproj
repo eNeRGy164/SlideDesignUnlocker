@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Label="Globals">
     <WebView2EnableCsWinRTProjection>True</WebView2EnableCsWinRTProjection>
   </PropertyGroup>
@@ -29,8 +29,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <AppxBlockMapHashAlgorithmId>http://www.w3.org/2001/04/xmlenc#sha256</AppxBlockMapHashAlgorithmId>
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
-    <AppxPackageSigningTimestampDigestAlgorithm>SHA512</AppxPackageSigningTimestampDigestAlgorithm>
+    <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <PackageCertificateThumbprint>36C30E04845630F1F3268E44780866CA0CC6040D</PackageCertificateThumbprint>
   </PropertyGroup>
 
