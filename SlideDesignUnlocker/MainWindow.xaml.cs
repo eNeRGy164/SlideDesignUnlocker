@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml;
 using System.ComponentModel;
 
 namespace SlideDesignUnlocker;
@@ -30,7 +30,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         this.InitializeComponent();
 
         this.AppWindow.Title = this.AppTitle;
-        this.AppWindow.SetIcon("Assets/App.ico");
+        this.AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "App.ico"));
 
         this.ExtendsContentIntoTitleBar = true;
         this.SetTitleBar(this.AppTitleBar);

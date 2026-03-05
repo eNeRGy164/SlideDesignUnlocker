@@ -13,7 +13,7 @@
 
         <StackPanel x:Name="AppTitleBar"
                     Orientation="Horizontal">
-            <Image Source="Assets/Square44x44Logo.scale-200.png"
+            <Image Source="ms-appx:///Assets/Square44x44Logo.scale-200.png"
                    HorizontalAlignment="Left"
                    Width="16" Height="16"
                    Margin="8,0"/>
