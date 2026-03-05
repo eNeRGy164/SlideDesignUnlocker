@@ -91,4 +91,6 @@
     <ProjectCapability Include="Msix" />
   </ItemGroup>
 
+  <Import Project="StorePackaging.targets" />
+
 </Project>
