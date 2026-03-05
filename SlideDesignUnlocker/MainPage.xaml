@@ -151,7 +151,13 @@
                                       Visibility="{x:Bind HasElementsWithLocks, Mode=OneTime}"
                                       HorizontalAlignment="Left" />
                             <TextBlock Text="{x:Bind Title}"
-                                       Padding="30,0,0,0" />
+                                       Padding="30,0,0,0"
+                                       Visibility="{x:Bind Title, Converter={StaticResource ShowEmptyConverter}}" />
+                            <TextBlock Text="(untitled)"
+                                       Padding="30,0,0,0"
+                                       FontStyle="Italic"
+                                       Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                       Visibility="{x:Bind Title, Converter={StaticResource HideWhenNotEmptyConverter}}" />
                         </Grid>
                     </DataTemplate>
                 </ListView.ItemTemplate>
