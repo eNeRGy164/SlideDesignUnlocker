@@ -65,6 +65,16 @@
                     </SplitButton.KeyboardAccelerators>
                 </SplitButton>
             </AppBarElementContainer>
+            <AppBarButton Label="Open in PowerPoint"
+                          Click="OpenInPowerPoint"
+                          Visibility="{x:Bind ViewModel.FilePath, Mode=OneWay, Converter={StaticResource ShowEmptyConverter}}">
+                <AppBarButton.Icon>
+                    <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE8A7;"/>
+                </AppBarButton.Icon>
+                <AppBarButton.KeyboardAccelerators>
+                    <KeyboardAccelerator Modifiers="Control" Key="P"/>
+                </AppBarButton.KeyboardAccelerators>
+            </AppBarButton>
             <AppBarButton Label="Close"
                           Click="CloseFile"
                           Visibility="{x:Bind ViewModel.FilePath, Mode=OneWay, Converter={StaticResource ShowEmptyConverter}}">

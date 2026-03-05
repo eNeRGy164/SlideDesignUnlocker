@@ -192,6 +192,55 @@ public sealed partial class MainPage : Page
         await Task.CompletedTask;
     }
 
+    internal async void OpenInPowerPoint(object _, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(this.ViewModel.FilePath))
+        {
+            return;
+        }
+
+        if (this.ViewModel.SlidesChanged)
+        {
+            var dialog = new ContentDialog()
+            {
+                XamlRoot = this.XamlRoot,
+                Title = "Unsaved Changes",
+                Content = "You have unsaved changes. Do you want to save before opening in PowerPoint, or open the current file without your changes?",
+                PrimaryButtonText = "Save and Open",
+                SecondaryButtonText = "Open Without Saving",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.None)
+            {
+                return;
+            }
+
+            if (result == ContentDialogResult.Primary)
+            {
+                this.SaveFile();
+
+                // If save failed or was cancelled, don't open
+                if (this.ViewModel.SlidesChanged)
+                {
+                    return;
+                }
+            }
+        }
+
+        try
+        {
+            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(this.ViewModel.FilePath);
+            await Windows.System.Launcher.LaunchFileAsync(file);
+        }
+        catch (Exception ex)
+        {
+            this.ViewModel.Error = $"Failed to open in PowerPoint: {ex.Message}";
+        }
+    }
+
     internal async void ShowAbout(object _, RoutedEventArgs e)
     {
         var aboutDialog = new AboutDialog { XamlRoot = this.XamlRoot };
