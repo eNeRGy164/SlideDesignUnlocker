@@ -2,6 +2,7 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
 using D = DocumentFormat.OpenXml.Drawing;
+using P16 = DocumentFormat.OpenXml.Office2016.Presentation;
 
 namespace SlideDesignUnlocker;
 
@@ -48,7 +49,7 @@ internal static class PresentationService
                         NoChangeArrowheads = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoChangeArrowheads ?? false,
                         NoAdjustHandles = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoAdjustHandles ?? false,
                         NoResize = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoResize ?? false,
-                        IsDesignElement = shape.NonVisualShapeProperties?.ApplicationNonVisualDrawingProperties?.Descendants<OpenXmlUnknownElement>().Any(e => e.LocalName == "designElem" && e.HasAttributes && e.GetAttribute("val", default!).Value == "1") ?? false
+                        IsDesignElement = IsDesignElement(shape.NonVisualShapeProperties?.ApplicationNonVisualDrawingProperties)
                     };
 
                     shapeModel.CaptureInitialState();
@@ -119,17 +120,40 @@ internal static class PresentationService
         var appProps = shape.NonVisualShapeProperties!.ApplicationNonVisualDrawingProperties;
         if (appProps is not null)
         {
-            var existingDesignElem = appProps.Descendants<OpenXmlUnknownElement>()
+            // Remove legacy p14:designElem if present
+            var legacyDesignElem = appProps.Descendants<OpenXmlUnknownElement>()
                 .FirstOrDefault(e => e.LocalName == "designElem");
-            existingDesignElem?.Remove();
+            legacyDesignElem?.Remove();
+
+            // Remove typed p16:designElem if present
+            var typedDesignElem = appProps.GetFirstChild<P16.DesignElement>();
+            typedDesignElem?.Remove();
 
             if (shapeModel.IsDesignElement)
             {
-                var designElem = new OpenXmlUnknownElement("p14", "designElem", "http://schemas.microsoft.com/office/powerpoint/2010/main");
-                designElem.SetAttribute(new OpenXmlAttribute("val", string.Empty, "1"));
-                appProps.AppendChild(designElem);
+                appProps.AppendChild(new P16.DesignElement { Val = true });
             }
         }
+    }
+
+    private static bool IsDesignElement(ApplicationNonVisualDrawingProperties? appProps)
+    {
+        if (appProps is null)
+        {
+            return false;
+        }
+
+        // Check typed p16:designElem
+        var typed = appProps.GetFirstChild<P16.DesignElement>();
+        if (typed?.Val is not null)
+        {
+            return typed.Val;
+        }
+
+        // Fall back to legacy p14:designElem (older PowerPoint versions)
+        var legacy = appProps.Descendants<OpenXmlUnknownElement>()
+            .FirstOrDefault(e => e.LocalName == "designElem");
+        return legacy is not null && legacy.GetAttribute("val", string.Empty).Value == "1";
     }
 
     private static string GetSlideTitle(Slide slide)
