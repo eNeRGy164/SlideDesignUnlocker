@@ -12,6 +12,8 @@ internal partial class ShapeModel : ObservableObject
     private bool initialNoAdjustHandles;
     private bool initialNoChangeArrowheads;
     private bool initialNoTextEdit;
+    private bool initialNoChangeAspect;
+    private bool initialNoSelection;
 
     public ShapeModel()
     {
@@ -38,6 +40,8 @@ internal partial class ShapeModel : ObservableObject
         this.initialNoAdjustHandles = this.NoAdjustHandles;
         this.initialNoChangeArrowheads = this.NoChangeArrowheads;
         this.initialNoTextEdit = this.NoTextEdit;
+        this.initialNoChangeAspect = this.NoChangeAspect;
+        this.initialNoSelection = this.NoSelection;
         this.initialStateCaptured = true;
 
         // Notify that computed properties may have changed
@@ -88,6 +92,14 @@ internal partial class ShapeModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(HasChanges))]
     public partial bool NoTextEdit { get; set; }
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasChanges))]
+    public partial bool NoChangeAspect { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasChanges))]
+    public partial bool NoSelection { get; set; }
+
     public bool HasLocks =>
         this.initialIsDesignElement ||
         this.initialNoResize ||
@@ -97,7 +109,9 @@ internal partial class ShapeModel : ObservableObject
         this.initialNoChangeShapeType ||
         this.initialNoAdjustHandles ||
         this.initialNoChangeArrowheads ||
-        this.initialNoTextEdit;
+        this.initialNoTextEdit ||
+        this.initialNoChangeAspect ||
+        this.initialNoSelection;
 
     public bool HasChanges =>
         this.initialStateCaptured && (
@@ -109,5 +123,7 @@ internal partial class ShapeModel : ObservableObject
             this.NoChangeShapeType != this.initialNoChangeShapeType ||
             this.NoAdjustHandles != this.initialNoAdjustHandles ||
             this.NoChangeArrowheads != this.initialNoChangeArrowheads ||
-            this.NoTextEdit != this.initialNoTextEdit);
+            this.NoTextEdit != this.initialNoTextEdit ||
+            this.NoChangeAspect != this.initialNoChangeAspect ||
+            this.NoSelection != this.initialNoSelection);
 }

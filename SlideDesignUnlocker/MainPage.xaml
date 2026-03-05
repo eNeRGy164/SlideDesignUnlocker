@@ -210,8 +210,12 @@
                               IsOn="{x:Bind ViewModel.SelectedShape.NoChangeArrowheads, Mode=TwoWay}" />
                 <ToggleSwitch Header="Disable changing shape type" 
                               IsOn="{x:Bind ViewModel.SelectedShape.NoChangeShapeType, Mode=TwoWay}" />
-                <ToggleSwitch Header="Disable text editing" 
+                <ToggleSwitch Header="Disable text editing"
                               IsOn="{x:Bind ViewModel.SelectedShape.NoTextEdit, Mode=TwoWay}" />
+                <ToggleSwitch Header="Disable aspect ratio change"
+                              IsOn="{x:Bind ViewModel.SelectedShape.NoChangeAspect, Mode=TwoWay}" />
+                <ToggleSwitch Header="Disable selection"
+                              IsOn="{x:Bind ViewModel.SelectedShape.NoSelection, Mode=TwoWay}" />
             </StackPanel>
             <ProgressRing Grid.RowSpan="2"
                           Grid.ColumnSpan="3"

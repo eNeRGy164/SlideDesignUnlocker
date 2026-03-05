@@ -44,6 +44,8 @@ internal static class PresentationService
                         NoMove = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoMove ?? false,
                         NoRotation = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoRotation ?? false,
                         NoTextEdit = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoTextEdit ?? false,
+                        NoChangeAspect = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoChangeAspect ?? false,
+                        NoSelection = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoSelection ?? false,
                         NoEditPoints = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoEditPoints ?? false,
                         NoChangeShapeType = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoChangeShapeType ?? false,
                         NoChangeArrowheads = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoChangeArrowheads ?? false,
@@ -116,6 +118,8 @@ internal static class PresentationService
         locks.NoChangeArrowheads = shapeModel.NoChangeArrowheads ? true : null;
         locks.NoAdjustHandles = shapeModel.NoAdjustHandles ? true : null;
         locks.NoTextEdit = shapeModel.NoTextEdit ? true : null;
+        locks.NoChangeAspect = shapeModel.NoChangeAspect ? true : null;
+        locks.NoSelection = shapeModel.NoSelection ? true : null;
 
         var appProps = shape.NonVisualShapeProperties!.ApplicationNonVisualDrawingProperties;
         if (appProps is not null)
