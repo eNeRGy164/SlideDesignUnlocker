@@ -7,9 +7,13 @@
     PrimaryButtonText="OK"
     DefaultButton="Primary">
     <StackPanel>
-        <Image Source="Assets/Square44x44Logo.scale-200.png"
+        <Image Source="ms-appx:///Assets/Square44x44Logo.scale-200.png"
                Height="100"
                Margin="8" />
+        <TextBlock Text="{x:Bind Version}"
+                   Style="{ThemeResource CaptionTextBlockStyle}"
+                   TextAlignment="Center"
+                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
         <TextBlock Text="© 2022 - Michaël Hompus"
                    Style="{ThemeResource BodyTextBlockStyle}"
                    TextAlignment="Center" />
