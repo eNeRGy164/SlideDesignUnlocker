@@ -50,64 +50,89 @@ public sealed partial class MainPage : Page
         App.MainWindow.PresentationName = null;
     }
 
-    internal void SaveFile(SplitButton _, SplitButtonClickEventArgs e) => this.SaveFile();
+    internal async void SaveFile(SplitButton _, SplitButtonClickEventArgs e) => await this.SaveFileAsync();
 
-    internal void SaveFile(object _, RoutedEventArgs e) => this.SaveFile();
+    internal async void SaveFile(object _, RoutedEventArgs e) => await this.SaveFileAsync();
 
-    private async void SaveFile()
+    private async Task SaveFileAsync()
     {
-        var currentHash = ComputeFileHash(this.ViewModel.FilePath!);
-
-        var fileWasModifiedExternally = currentHash != this.ViewModel.FileHash;
-        if (fileWasModifiedExternally)
+        if (string.IsNullOrWhiteSpace(this.ViewModel.FilePath))
         {
-            var dialog = new ContentDialog()
-            {
-                XamlRoot = this.XamlRoot,
-                Title = "File Modified Externally",
-                Content = "The file has been modified since you opened it. Do you want to overwrite the changes or save as a new file?",
-                PrimaryButtonText = "Overwrite",
-                SecondaryButtonText = "Save As",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Secondary
-            };
-
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.None)
-            {
-                return;
-            }
-
-            if (result == ContentDialogResult.Secondary)
-            {
-                await this.PickAndSaveFile();
-                return;
-            }
+            this.ViewModel.Error = "No presentation is open.";
+            return;
         }
 
-        await this.SaveToFile(this.ViewModel.FilePath!);
+        try
+        {
+            var currentHash = ComputeFileHash(this.ViewModel.FilePath);
+
+            var fileWasModifiedExternally = currentHash != this.ViewModel.FileHash;
+            if (fileWasModifiedExternally)
+            {
+                var dialog = new ContentDialog()
+                {
+                    XamlRoot = this.XamlRoot,
+                    Title = "File Modified Externally",
+                    Content = "The file has been modified since you opened it. Do you want to overwrite the changes or save as a new file?",
+                    PrimaryButtonText = "Overwrite",
+                    SecondaryButtonText = "Save As",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Secondary
+                };
+
+                var result = await dialog.ShowAsync();
+                if (result == ContentDialogResult.None)
+                {
+                    return;
+                }
+
+                if (result == ContentDialogResult.Secondary)
+                {
+                    await this.PickAndSaveFile();
+                    return;
+                }
+            }
+
+            await this.SaveToFile(this.ViewModel.FilePath);
+        }
+        catch (Exception ex)
+        {
+            this.ViewModel.Error = $"Failed to save: {ex.Message}";
+        }
     }
 
     internal async void SaveFileAs(object _, RoutedEventArgs e)
     {
-        await this.PickAndSaveFile();
+        try
+        {
+            await this.PickAndSaveFile();
+        }
+        catch (Exception ex)
+        {
+            this.ViewModel.Error = $"Failed to choose a save location: {ex.Message}";
+        }
     }
 
     private async Task PickAndSaveFile()
     {
+        if (string.IsNullOrWhiteSpace(this.ViewModel.FilePath))
+        {
+            this.ViewModel.Error = "No presentation is open.";
+            return;
+        }
+
         var filePicker = new FileSavePicker()
         {
-            SuggestedFileName = $"{Path.GetFileNameWithoutExtension(this.ViewModel.FilePath)}.Fixed{Path.GetExtension(this.ViewModel.FilePath)}",
-            FileTypeChoices =
-            {
-                { "PowerPoint Presentation", [".pptx"] }
-            }
+            SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+            SuggestedFileName = $"{Path.GetFileNameWithoutExtension(this.ViewModel.FilePath)}.Fixed",
+            DefaultFileExtension = ".pptx"
         };
+        filePicker.FileTypeChoices.Add("PowerPoint Presentation", new List<string> { ".pptx" });
 
         InitializeWithWindow.Initialize(filePicker, App.WindowHandle);
 
         var file = await filePicker.PickSaveFileAsync();
-        if (file is not null)
+        if (file is not null && !string.IsNullOrWhiteSpace(file.Path))
         {
             await this.SaveToFile(file.Path);
         }
@@ -167,6 +192,55 @@ public sealed partial class MainPage : Page
         await Task.CompletedTask;
     }
 
+    internal async void OpenInPowerPoint(object _, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(this.ViewModel.FilePath))
+        {
+            return;
+        }
+
+        if (this.ViewModel.SlidesChanged)
+        {
+            var dialog = new ContentDialog()
+            {
+                XamlRoot = this.XamlRoot,
+                Title = "Unsaved Changes",
+                Content = "You have unsaved changes. Do you want to save before opening in PowerPoint, or open the current file without your changes?",
+                PrimaryButtonText = "Save and Open",
+                SecondaryButtonText = "Open Without Saving",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.None)
+            {
+                return;
+            }
+
+            if (result == ContentDialogResult.Primary)
+            {
+                await this.SaveFileAsync();
+
+                // If save failed or was cancelled, don't open
+                if (this.ViewModel.SlidesChanged)
+                {
+                    return;
+                }
+            }
+        }
+
+        try
+        {
+            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(this.ViewModel.FilePath);
+            await Windows.System.Launcher.LaunchFileAsync(file);
+        }
+        catch (Exception ex)
+        {
+            this.ViewModel.Error = $"Failed to open in PowerPoint: {ex.Message}";
+        }
+    }
+
     internal async void ShowAbout(object _, RoutedEventArgs e)
     {
         var aboutDialog = new AboutDialog { XamlRoot = this.XamlRoot };
@@ -191,7 +265,28 @@ public sealed partial class MainPage : Page
 
         App.MainWindow.PresentationName = Path.GetFileName(this.ViewModel.FilePath);
 
-        ThreadPool.QueueUserWorkItem(PresentationService.LoadPresentation, this.ViewModel, false);
+        var filePath = this.ViewModel.FilePath!;
+        ThreadPool.QueueUserWorkItem(_ =>
+        {
+            var slides = PresentationService.LoadSlides(filePath);
+
+            if (slides is null)
+            {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    this.ViewModel.Error = "Could not parse this presentation correctly";
+                    this.ViewModel.Loading = false;
+                });
+                return;
+            }
+
+            foreach (var slide in slides)
+            {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() => this.ViewModel.Slides.Add(slide));
+            }
+
+            App.MainWindow.DispatcherQueue.TryEnqueue(() => { this.ViewModel.Loading = false; });
+        });
     }
 
     private static string? ComputeFileHash(string filePath)

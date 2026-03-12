@@ -2,20 +2,21 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
 using D = DocumentFormat.OpenXml.Drawing;
+using P16 = DocumentFormat.OpenXml.Office2016.Presentation;
 
 namespace SlideDesignUnlocker;
 
-internal static class PresentationService
+public static class PresentationService
 {
-    internal static void LoadPresentation(MainPageViewModel viewModel)
+    public static List<SlideModel>? LoadSlides(string filePath)
     {
-        using var presentationDocument = PresentationDocument.Open(viewModel.FilePath!, false);
+        using var presentationDocument = PresentationDocument.Open(filePath, false);
         if (presentationDocument.PresentationPart is null)
         {
-            viewModel.Error = "Could not parse this presentation correctly";
-            return;
+            return null;
         }
 
+        var slides = new List<SlideModel>();
         var presentationPart = presentationDocument.PresentationPart;
         var presentation = presentationPart.Presentation;
 
@@ -43,26 +44,28 @@ internal static class PresentationService
                         NoMove = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoMove ?? false,
                         NoRotation = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoRotation ?? false,
                         NoTextEdit = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoTextEdit ?? false,
+                        NoChangeAspect = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoChangeAspect ?? false,
+                        NoSelection = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoSelection ?? false,
                         NoEditPoints = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoEditPoints ?? false,
                         NoChangeShapeType = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoChangeShapeType ?? false,
                         NoChangeArrowheads = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoChangeArrowheads ?? false,
                         NoAdjustHandles = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoAdjustHandles ?? false,
                         NoResize = shape.NonVisualShapeProperties?.NonVisualShapeDrawingProperties?.ShapeLocks?.NoResize ?? false,
-                        IsDesignElement = shape.NonVisualShapeProperties?.ApplicationNonVisualDrawingProperties?.Descendants<OpenXmlUnknownElement>().Any(e => e.LocalName == "designElem" && e.HasAttributes && e.GetAttribute("val", default!).Value == "1") ?? false
+                        IsDesignElement = IsDesignElement(shape.NonVisualShapeProperties?.ApplicationNonVisualDrawingProperties)
                     };
 
                     shapeModel.CaptureInitialState();
                     model.Shapes.Insert(0, shapeModel);
                 }
 
-                App.MainWindow.DispatcherQueue.TryEnqueue(() => viewModel.Slides.Add(model));
+                slides.Add(model);
             }
         }
 
-        App.MainWindow.DispatcherQueue.TryEnqueue(() => { viewModel.Loading = false; });
+        return slides;
     }
 
-    internal static void SaveChangesToPresentation(string filePath, IEnumerable<SlideModel> slides)
+    public static void SaveChangesToPresentation(string filePath, IEnumerable<SlideModel> slides)
     {
         using var presentationDocument = PresentationDocument.Open(filePath, isEditable: true);
         if (presentationDocument.PresentationPart is null)
@@ -100,7 +103,7 @@ internal static class PresentationService
         presentationDocument.Save();
     }
 
-    private static void ApplyShapeChanges(Shape shape, ShapeModel shapeModel)
+    public static void ApplyShapeChanges(Shape shape, ShapeModel shapeModel)
     {
         var drawingProps = shape.NonVisualShapeProperties!.NonVisualShapeDrawingProperties!;
 
@@ -115,24 +118,54 @@ internal static class PresentationService
         locks.NoChangeArrowheads = shapeModel.NoChangeArrowheads ? true : null;
         locks.NoAdjustHandles = shapeModel.NoAdjustHandles ? true : null;
         locks.NoTextEdit = shapeModel.NoTextEdit ? true : null;
+        locks.NoChangeAspect = shapeModel.NoChangeAspect ? true : null;
+        locks.NoSelection = shapeModel.NoSelection ? true : null;
+
+        if (!locks.HasAttributes)
+        {
+            locks.Remove();
+        }
 
         var appProps = shape.NonVisualShapeProperties!.ApplicationNonVisualDrawingProperties;
         if (appProps is not null)
         {
-            var existingDesignElem = appProps.Descendants<OpenXmlUnknownElement>()
+            // Remove legacy p14:designElem if present
+            var legacyDesignElem = appProps.Descendants<OpenXmlUnknownElement>()
                 .FirstOrDefault(e => e.LocalName == "designElem");
-            existingDesignElem?.Remove();
+            legacyDesignElem?.Remove();
+
+            // Remove typed p16:designElem if present
+            var typedDesignElem = appProps.GetFirstChild<P16.DesignElement>();
+            typedDesignElem?.Remove();
 
             if (shapeModel.IsDesignElement)
             {
-                var designElem = new OpenXmlUnknownElement("p14", "designElem", "http://schemas.microsoft.com/office/powerpoint/2010/main");
-                designElem.SetAttribute(new OpenXmlAttribute("val", string.Empty, "1"));
-                appProps.AppendChild(designElem);
+                appProps.AppendChild(new P16.DesignElement { Val = true });
             }
         }
     }
 
-    private static string GetSlideTitle(Slide slide)
+    public static bool IsDesignElement(ApplicationNonVisualDrawingProperties? appProps)
+    {
+        if (appProps is null)
+        {
+            return false;
+        }
+
+        // Check typed p16:designElem
+        var typed = appProps.GetFirstChild<P16.DesignElement>();
+        if (typed?.Val is not null)
+        {
+            return typed.Val;
+        }
+
+        // Fall back to legacy p14:designElem (older PowerPoint versions)
+        var legacy = appProps.Descendants<OpenXmlUnknownElement>()
+            .FirstOrDefault(e => e.LocalName == "designElem");
+        return legacy is not null && legacy.GetAttribute("val", string.Empty).Value == "1";
+    }
+
+    public static string GetSlideTitle(Slide slide)
     {
         var title = string.Empty;
 

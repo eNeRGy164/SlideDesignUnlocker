@@ -65,6 +65,16 @@
                     </SplitButton.KeyboardAccelerators>
                 </SplitButton>
             </AppBarElementContainer>
+            <AppBarButton Label="Open in PowerPoint"
+                          Click="OpenInPowerPoint"
+                          Visibility="{x:Bind ViewModel.FilePath, Mode=OneWay, Converter={StaticResource ShowEmptyConverter}}">
+                <AppBarButton.Icon>
+                    <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE8A7;"/>
+                </AppBarButton.Icon>
+                <AppBarButton.KeyboardAccelerators>
+                    <KeyboardAccelerator Modifiers="Control" Key="P"/>
+                </AppBarButton.KeyboardAccelerators>
+            </AppBarButton>
             <AppBarButton Label="Close"
                           Click="CloseFile"
                           Visibility="{x:Bind ViewModel.FilePath, Mode=OneWay, Converter={StaticResource ShowEmptyConverter}}">
@@ -126,12 +136,12 @@
             </StackPanel>
 
             <TextBlock Style="{ThemeResource SubtitleTextBlockStyle}"
-                       Padding="{ThemeResource TextControlThemePadding}" 
+                       Padding="{ThemeResource TextControlThemePadding}"
                        Text="Slides"
                        Visibility="{x:Bind ViewModel.FilePath, Mode=OneWay, Converter={StaticResource ShowEmptyConverter}}"/>
             <ListView Grid.Row="1"
-                      ItemsSource="{x:Bind ViewModel.Slides}" 
-                      SelectedItem="{x:Bind ViewModel.SelectedSlide, Mode=TwoWay}" 
+                      ItemsSource="{x:Bind ViewModel.Slides}"
+                      SelectedItem="{x:Bind ViewModel.SelectedSlide, Mode=TwoWay}"
                       Visibility="{x:Bind ViewModel.FilePath, Mode=OneWay, Converter={StaticResource ShowEmptyConverter}}">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="local:SlideModel">
@@ -141,19 +151,25 @@
                                       Visibility="{x:Bind HasElementsWithLocks, Mode=OneTime}"
                                       HorizontalAlignment="Left" />
                             <TextBlock Text="{x:Bind Title}"
-                                       Padding="30,0,0,0" />
+                                       Padding="30,0,0,0"
+                                       Visibility="{x:Bind Title, Converter={StaticResource ShowEmptyConverter}}" />
+                            <TextBlock Text="(untitled)"
+                                       Padding="30,0,0,0"
+                                       FontStyle="Italic"
+                                       Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                       Visibility="{x:Bind Title, Converter={StaticResource HideWhenNotEmptyConverter}}" />
                         </Grid>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
             <TextBlock Grid.Column="1"
-                       Style="{ThemeResource SubtitleTextBlockStyle}" 
-                       Padding="{ThemeResource TextControlThemePadding}" 
+                       Style="{ThemeResource SubtitleTextBlockStyle}"
+                       Padding="{ThemeResource TextControlThemePadding}"
                        Text="Elements"
                        Visibility="{x:Bind ViewModel.SelectedSlide, Mode=OneWay, Converter={StaticResource HideEmptyConverter}}" />
             <TreeView Grid.Column="1"
                       Grid.Row="1"
-                      ItemsSource="{x:Bind ViewModel.SelectedSlide.Shapes, Mode=OneWay}" 
+                      ItemsSource="{x:Bind ViewModel.SelectedSlide.Shapes, Mode=OneWay}"
                       SelectedItem="{x:Bind ViewModel.SelectedShape, Mode=TwoWay}"
                       Visibility="{x:Bind ViewModel.SelectedSlide, Mode=OneWay, Converter={StaticResource HideEmptyConverter}}">
                 <TreeView.ItemTemplate>
@@ -176,33 +192,38 @@
                 </TreeView.ItemTemplate>
             </TreeView>
             <TextBlock Grid.Column="2"
-                       Style="{ThemeResource SubtitleTextBlockStyle}" 
-                       Padding="{ThemeResource TextControlThemePadding}" 
+                       Style="{ThemeResource SubtitleTextBlockStyle}"
+                       Padding="{ThemeResource TextControlThemePadding}"
                        Text="Locks"
                        Visibility="{x:Bind ViewModel.SelectedShape, Mode=OneWay, Converter={StaticResource HideEmptyConverter}}" />
-            <StackPanel Grid.Column="2"
-                        Grid.Row="1"
-                        Visibility="{x:Bind ViewModel.SelectedShape, Mode=OneWay, Converter={StaticResource HideEmptyConverter}}"
-                        Padding="{ThemeResource TextControlThemePadding}">
-                <ToggleSwitch Header="Is a design element"
-                              IsOn="{x:Bind ViewModel.SelectedShape.IsDesignElement, Mode=TwoWay}" />
-                <ToggleSwitch Header="Disable moving"
-                              IsOn="{x:Bind ViewModel.SelectedShape.NoMove, Mode=TwoWay}" />
-                <ToggleSwitch Header="Disable resizing" 
-                              IsOn="{x:Bind ViewModel.SelectedShape.NoResize, Mode=TwoWay}" />
-                <ToggleSwitch Header="Disable rotation" 
-                              IsOn="{x:Bind ViewModel.SelectedShape.NoRotation, Mode=TwoWay}" />
-                <ToggleSwitch Header="Disable point editing" 
-                              IsOn="{x:Bind ViewModel.SelectedShape.NoEditPoints, Mode=TwoWay}" />
-                <ToggleSwitch Header="Disable adjust handles" 
-                              IsOn="{x:Bind ViewModel.SelectedShape.NoAdjustHandles, Mode=TwoWay}" />
-                <ToggleSwitch Header="Disable changing arrow heads" 
-                              IsOn="{x:Bind ViewModel.SelectedShape.NoChangeArrowheads, Mode=TwoWay}" />
-                <ToggleSwitch Header="Disable changing shape type" 
-                              IsOn="{x:Bind ViewModel.SelectedShape.NoChangeShapeType, Mode=TwoWay}" />
-                <ToggleSwitch Header="Disable text editing" 
-                              IsOn="{x:Bind ViewModel.SelectedShape.NoTextEdit, Mode=TwoWay}" />
-            </StackPanel>
+            <ScrollViewer Grid.Column="2"
+                          Grid.Row="1"
+                          Visibility="{x:Bind ViewModel.SelectedShape, Mode=OneWay, Converter={StaticResource HideEmptyConverter}}">
+                <StackPanel Padding="{ThemeResource TextControlThemePadding}">
+                    <ToggleSwitch Header="Is a design element"
+                                  IsOn="{x:Bind ViewModel.SelectedShape.IsDesignElement, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Disable moving"
+                                  IsOn="{x:Bind ViewModel.SelectedShape.NoMove, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Disable resizing"
+                                  IsOn="{x:Bind ViewModel.SelectedShape.NoResize, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Disable rotation"
+                                  IsOn="{x:Bind ViewModel.SelectedShape.NoRotation, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Disable point editing"
+                                  IsOn="{x:Bind ViewModel.SelectedShape.NoEditPoints, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Disable adjust handles"
+                                  IsOn="{x:Bind ViewModel.SelectedShape.NoAdjustHandles, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Disable changing arrow heads"
+                                  IsOn="{x:Bind ViewModel.SelectedShape.NoChangeArrowheads, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Disable changing shape type"
+                                  IsOn="{x:Bind ViewModel.SelectedShape.NoChangeShapeType, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Disable text editing"
+                                  IsOn="{x:Bind ViewModel.SelectedShape.NoTextEdit, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Disable aspect ratio change"
+                                  IsOn="{x:Bind ViewModel.SelectedShape.NoChangeAspect, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Disable selection"
+                                  IsOn="{x:Bind ViewModel.SelectedShape.NoSelection, Mode=TwoWay}" />
+                </StackPanel>
+            </ScrollViewer>
             <ProgressRing Grid.RowSpan="2"
                           Grid.ColumnSpan="3"
                           IsActive="{x:Bind ViewModel.Loading, Mode=OneWay}" />

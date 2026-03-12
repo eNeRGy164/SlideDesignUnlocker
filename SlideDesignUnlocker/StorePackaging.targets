@@ -1,0 +1,79 @@
+<Project>
+  <!--
+    Create Store-ready MSIX + .msixupload packages for all architectures.
+
+    Usage:
+      dotnet msbuild -t:CreateStorePackages
+      msbuild /t:CreateStorePackages
+
+    Produces self-contained, trimmed MSIX packages and per-architecture
+    .msixupload files (for Store submission) in AppPackages/.
+  -->
+
+  <PropertyGroup>
+    <StorePackageDir Condition="'$(StorePackageDir)' == ''">$(MSBuildProjectDirectory)\AppPackages\</StorePackageDir>
+    <_UploadStagingDir>$(MSBuildProjectDirectory)\obj\msixupload\</_UploadStagingDir>
+  </PropertyGroup>
+
+  <Target Name="CreateStorePackages"
+          DependsOnTargets="_PublishStorePackages;_CreateStoreUploads" />
+
+  <!-- Step 1: publish self-contained + trimmed MSIX per architecture -->
+  <Target Name="_PublishStorePackages">
+    <ItemGroup>
+      <_StoreRid Include="win-x64" />
+      <_StoreRid Include="win-arm64" />
+      <_StoreRid Include="win-x86" />
+    </ItemGroup>
+
+    <!-- Resolve VCToolsInstallDir so the packaging targets can find mspdbcmf.exe for .appxsym generation -->
+    <Exec Command="&quot;$(ProgramFiles) (x86)\Microsoft Visual Studio\Installer\vswhere.exe&quot; -latest -property installationPath"
+          ConsoleToMsBuild="true"
+          Condition="'$(VCToolsInstallDir)' == ''"
+          StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_VsInstallRoot" />
+    </Exec>
+    <Exec Command="dir /b /o-n &quot;$(_VsInstallRoot)\VC\Tools\MSVC&quot;"
+          ConsoleToMsBuild="true"
+          Condition="'$(VCToolsInstallDir)' == '' and '$(_VsInstallRoot)' != ''"
+          StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_LatestMsvcVersions" />
+    </Exec>
+    <PropertyGroup Condition="'$(VCToolsInstallDir)' == '' and '$(_VsInstallRoot)' != ''">
+      <_LatestMsvcVersion>$(_LatestMsvcVersions.Split(';')[0].Trim())</_LatestMsvcVersion>
+      <VCToolsInstallDir>$(_VsInstallRoot)\VC\Tools\MSVC\$(_LatestMsvcVersion)\</VCToolsInstallDir>
+    </PropertyGroup>
+
+    <Message Text="Publishing self-contained trimmed MSIX for %(_StoreRid.Identity)..." Importance="high" />
+
+    <Exec Command="set &quot;VCToolsInstallDir=$(VCToolsInstallDir)&quot; &amp;&amp; dotnet publish $(MSBuildProjectFullPath) -c Release -r %(_StoreRid.Identity) -p:GenerateAppxPackageOnBuild=true -p:AppxPackageDir=$(StorePackageDir) -p:AppxBundle=Never -p:BuildAppxUploadPackageForUap=false" />
+  </Target>
+
+  <!-- Step 2: create .msixupload (zip containing the MSIX + appxsym) for Store submission -->
+  <Target Name="_CreateStoreUploads">
+    <ItemGroup>
+      <_PublishedMsix Include="$(StorePackageDir)*_Test\*.msix"
+                      Exclude="$(StorePackageDir)*_Test\Dependencies\**\*.msix" />
+      <_PublishedAppxSym Include="$(StorePackageDir)*_Test\*.appxsym" />
+    </ItemGroup>
+
+    <!-- Stage MSIX in an isolated directory -->
+    <RemoveDir Directories="$(_UploadStagingDir)%(_PublishedMsix.Filename)" />
+    <MakeDir Directories="$(_UploadStagingDir)%(_PublishedMsix.Filename)" />
+    <Copy SourceFiles="%(_PublishedMsix.Identity)"
+          DestinationFolder="$(_UploadStagingDir)%(_PublishedMsix.Filename)" />
+
+    <!-- Include the symbol package alongside the MSIX (same base name) -->
+    <Copy SourceFiles="%(_PublishedAppxSym.Identity)"
+          DestinationFolder="$(_UploadStagingDir)%(_PublishedAppxSym.Filename)" />
+
+    <ZipDirectory SourceDirectory="$(_UploadStagingDir)%(_PublishedMsix.Filename)"
+                  DestinationFile="$(StorePackageDir)%(_PublishedMsix.Filename).msixupload"
+                  Overwrite="true" />
+
+    <RemoveDir Directories="$(_UploadStagingDir)" />
+
+    <Message Text="Store packages and uploads created in $(StorePackageDir)" Importance="high" />
+  </Target>
+
+</Project>

@@ -1,6 +1,11 @@
-﻿namespace SlideDesignUnlocker;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 
-internal partial class SlideModel : ObservableRecipient, IRecipient<ShapeChangeStatusChanged>
+namespace SlideDesignUnlocker;
+
+public partial class SlideModel : ObservableRecipient, IRecipient<ShapeChangeStatusChanged>
 {
     [ObservableProperty]
     public partial string? Title { get; set; }
@@ -22,7 +27,7 @@ internal partial class SlideModel : ObservableRecipient, IRecipient<ShapeChangeS
 
     public SlideModel()
     {
-        WeakReferenceMessenger.Default.RegisterAll(this);
+        WeakReferenceMessenger.Default.Register<ShapeChangeStatusChanged>(this);
 
         this.Shapes.CollectionChanged += (_, args) =>
         {
