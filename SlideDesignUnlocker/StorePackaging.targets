@@ -27,9 +27,6 @@
     </ItemGroup>
 
     <!-- Resolve VCToolsInstallDir so the packaging targets can find mspdbcmf.exe for .appxsym generation -->
-    <PropertyGroup Condition="'$(VCToolsInstallDir)' == ''">
-      <_VsWhereExe>$([MSBuild]::GetRegistryValueFromView('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\Setup', 'SharedInstallationPath', '', RegistryView.Default))</_VsWhereExe>
-    </PropertyGroup>
     <Exec Command="&quot;$(ProgramFiles) (x86)\Microsoft Visual Studio\Installer\vswhere.exe&quot; -latest -property installationPath"
           ConsoleToMsBuild="true"
           Condition="'$(VCToolsInstallDir)' == ''"

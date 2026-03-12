@@ -1,6 +1,9 @@
-﻿namespace SlideDesignUnlocker;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging;
 
-internal partial class ShapeModel : ObservableObject
+namespace SlideDesignUnlocker;
+
+public partial class ShapeModel : ObservableObject
 {
     private bool initialStateCaptured;
     private bool initialIsDesignElement;

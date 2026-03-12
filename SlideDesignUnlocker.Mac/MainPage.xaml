@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:SlideDesignUnlocker.Mac"
+             xmlns:core="clr-namespace:SlideDesignUnlocker;assembly=SlideDesignUnlocker.Core"
+             x:Class="SlideDesignUnlocker.Mac.MainPage"
+             x:DataType="local:MainPageViewModel"
+             Title="Slide Design Unlocker">
+
+    <ContentPage.Resources>
+        <local:NullOrEmptyToPlaceholderConverter x:Key="TitleConverter" Placeholder="(untitled)" />
+    </ContentPage.Resources>
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Open" Clicked="SelectFile" />
+        <ToolbarItem Text="Save" Clicked="SaveFile" />
+        <ToolbarItem Text="Close" Clicked="CloseFile" />
+        <ToolbarItem Text="About" Clicked="ShowAbout" Order="Secondary" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="*, Auto">
+
+        <!-- Welcome screen (no file open) -->
+        <VerticalStackLayout IsVisible="{Binding NoFile}"
+                             HorizontalOptions="Center"
+                             VerticalOptions="Center"
+                             Spacing="8">
+            <Label Text="📂"
+                   FontSize="48"
+                   HorizontalOptions="Center" />
+            <Label Text="Open a PowerPoint presentation"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+            <Label Text="to inspect and modify element locks"
+                   FontSize="14"
+                   HorizontalOptions="Center"
+                   Opacity="0.6" />
+        </VerticalStackLayout>
+
+        <!-- Main three-column content -->
+        <Grid IsVisible="{Binding HasFile}"
+              ColumnDefinitions="3*, 1, 4*, 1, 3*"
+              RowDefinitions="Auto, *">
+
+            <!-- Slides header -->
+            <Label Text="Slides"
+                   FontAttributes="Bold"
+                   FontSize="16"
+                   Padding="12,8" />
+
+            <!-- Slides list -->
+            <CollectionView Grid.Row="1"
+                            ItemsSource="{Binding Slides}"
+                            SelectedItem="{Binding SelectedSlide, Mode=TwoWay}"
+                            SelectionMode="Single">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="core:SlideModel">
+                        <Grid Padding="12,6" ColumnDefinitions="Auto, *">
+                            <Label Text="🔒"
+                                   IsVisible="{Binding HasElementsWithLocks}"
+                                   VerticalOptions="Center" />
+                            <Label Grid.Column="1"
+                                   Text="{Binding Title, Converter={StaticResource TitleConverter}}"
+                                   VerticalOptions="Center"
+                                   Padding="4,0,0,0" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Separator -->
+            <BoxView Grid.Column="1" Grid.RowSpan="2"
+                     Color="{AppThemeBinding Light=#E0E0E0, Dark=#404040}"
+                     WidthRequest="1" />
+
+            <!-- Elements header -->
+            <Label Grid.Column="2"
+                   Text="Elements"
+                   FontAttributes="Bold"
+                   FontSize="16"
+                   Padding="12,8"
+                   IsVisible="{Binding HasSelectedSlide}" />
+
+            <!-- Elements list -->
+            <CollectionView Grid.Row="1" Grid.Column="2"
+                            ItemsSource="{Binding SelectedSlide.Shapes}"
+                            SelectedItem="{Binding SelectedShape, Mode=TwoWay}"
+                            SelectionMode="Single"
+                            IsVisible="{Binding HasSelectedSlide}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="core:ShapeModel">
+                        <Grid Padding="12,6" ColumnDefinitions="*, Auto">
+                            <Label Text="{Binding Name}"
+                                   VerticalOptions="Center" />
+                            <Label Grid.Column="1"
+                                   Text="🔒"
+                                   IsVisible="{Binding HasLocks}"
+                                   VerticalOptions="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Separator -->
+            <BoxView Grid.Column="3" Grid.RowSpan="2"
+                     Color="{AppThemeBinding Light=#E0E0E0, Dark=#404040}"
+                     WidthRequest="1" />
+
+            <!-- Locks header -->
+            <Label Grid.Column="4"
+                   Text="Locks"
+                   FontAttributes="Bold"
+                   FontSize="16"
+                   Padding="12,8"
+                   IsVisible="{Binding HasSelectedShape}" />
+
+            <!-- Locks panel -->
+            <ScrollView Grid.Row="1" Grid.Column="4"
+                        IsVisible="{Binding HasSelectedShape}">
+                <VerticalStackLayout Padding="12,4" Spacing="16">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Text="Is a design element" VerticalOptions="Center" />
+                        <Switch Grid.Column="1" IsToggled="{Binding SelectedShape.IsDesignElement, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Text="Disable moving" VerticalOptions="Center" />
+                        <Switch Grid.Column="1" IsToggled="{Binding SelectedShape.NoMove, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Text="Disable resizing" VerticalOptions="Center" />
+                        <Switch Grid.Column="1" IsToggled="{Binding SelectedShape.NoResize, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Text="Disable rotation" VerticalOptions="Center" />
+                        <Switch Grid.Column="1" IsToggled="{Binding SelectedShape.NoRotation, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Text="Disable point editing" VerticalOptions="Center" />
+                        <Switch Grid.Column="1" IsToggled="{Binding SelectedShape.NoEditPoints, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Text="Disable adjust handles" VerticalOptions="Center" />
+                        <Switch Grid.Column="1" IsToggled="{Binding SelectedShape.NoAdjustHandles, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Text="Disable changing arrow heads" VerticalOptions="Center" />
+                        <Switch Grid.Column="1" IsToggled="{Binding SelectedShape.NoChangeArrowheads, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Text="Disable changing shape type" VerticalOptions="Center" />
+                        <Switch Grid.Column="1" IsToggled="{Binding SelectedShape.NoChangeShapeType, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Text="Disable text editing" VerticalOptions="Center" />
+                        <Switch Grid.Column="1" IsToggled="{Binding SelectedShape.NoTextEdit, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Text="Disable aspect ratio change" VerticalOptions="Center" />
+                        <Switch Grid.Column="1" IsToggled="{Binding SelectedShape.NoChangeAspect, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Text="Disable selection" VerticalOptions="Center" />
+                        <Switch Grid.Column="1" IsToggled="{Binding SelectedShape.NoSelection, Mode=TwoWay}" />
+                    </Grid>
+                </VerticalStackLayout>
+            </ScrollView>
+        </Grid>
+
+        <!-- Loading / saving overlay -->
+        <ActivityIndicator IsRunning="{Binding Loading}"
+                           IsVisible="{Binding Loading}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+        <ActivityIndicator IsRunning="{Binding Saving}"
+                           IsVisible="{Binding Saving}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center" />
+
+        <!-- Error bar -->
+        <HorizontalStackLayout Grid.Row="1"
+                               Padding="12,8"
+                               Spacing="8"
+                               BackgroundColor="{AppThemeBinding Light=#FFF0F0, Dark=#401010}"
+                               IsVisible="{Binding HasError}">
+            <Label Text="⚠️" VerticalOptions="Center" />
+            <Label Text="{Binding Error}" TextColor="Red" VerticalOptions="Center" />
+        </HorizontalStackLayout>
+
+        <!-- Success bar -->
+        <HorizontalStackLayout Grid.Row="1"
+                               Padding="12,8"
+                               Spacing="8"
+                               BackgroundColor="{AppThemeBinding Light=#F0FFF0, Dark=#104010}"
+                               IsVisible="{Binding HasStatusMessage}">
+            <Label Text="✅" VerticalOptions="Center" />
+            <Label Text="{Binding StatusMessage}" VerticalOptions="Center" />
+        </HorizontalStackLayout>
+    </Grid>
+</ContentPage>

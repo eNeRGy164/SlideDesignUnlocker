@@ -6,17 +6,17 @@ using P16 = DocumentFormat.OpenXml.Office2016.Presentation;
 
 namespace SlideDesignUnlocker;
 
-internal static class PresentationService
+public static class PresentationService
 {
-    internal static void LoadPresentation(MainPageViewModel viewModel)
+    public static List<SlideModel>? LoadSlides(string filePath)
     {
-        using var presentationDocument = PresentationDocument.Open(viewModel.FilePath!, false);
+        using var presentationDocument = PresentationDocument.Open(filePath, false);
         if (presentationDocument.PresentationPart is null)
         {
-            viewModel.Error = "Could not parse this presentation correctly";
-            return;
+            return null;
         }
 
+        var slides = new List<SlideModel>();
         var presentationPart = presentationDocument.PresentationPart;
         var presentation = presentationPart.Presentation;
 
@@ -58,14 +58,14 @@ internal static class PresentationService
                     model.Shapes.Insert(0, shapeModel);
                 }
 
-                App.MainWindow.DispatcherQueue.TryEnqueue(() => viewModel.Slides.Add(model));
+                slides.Add(model);
             }
         }
 
-        App.MainWindow.DispatcherQueue.TryEnqueue(() => { viewModel.Loading = false; });
+        return slides;
     }
 
-    internal static void SaveChangesToPresentation(string filePath, IEnumerable<SlideModel> slides)
+    public static void SaveChangesToPresentation(string filePath, IEnumerable<SlideModel> slides)
     {
         using var presentationDocument = PresentationDocument.Open(filePath, isEditable: true);
         if (presentationDocument.PresentationPart is null)
@@ -103,7 +103,7 @@ internal static class PresentationService
         presentationDocument.Save();
     }
 
-    private static void ApplyShapeChanges(Shape shape, ShapeModel shapeModel)
+    public static void ApplyShapeChanges(Shape shape, ShapeModel shapeModel)
     {
         var drawingProps = shape.NonVisualShapeProperties!.NonVisualShapeDrawingProperties!;
 
@@ -120,6 +120,11 @@ internal static class PresentationService
         locks.NoTextEdit = shapeModel.NoTextEdit ? true : null;
         locks.NoChangeAspect = shapeModel.NoChangeAspect ? true : null;
         locks.NoSelection = shapeModel.NoSelection ? true : null;
+
+        if (!locks.HasAttributes)
+        {
+            locks.Remove();
+        }
 
         var appProps = shape.NonVisualShapeProperties!.ApplicationNonVisualDrawingProperties;
         if (appProps is not null)
@@ -140,7 +145,7 @@ internal static class PresentationService
         }
     }
 
-    private static bool IsDesignElement(ApplicationNonVisualDrawingProperties? appProps)
+    public static bool IsDesignElement(ApplicationNonVisualDrawingProperties? appProps)
     {
         if (appProps is null)
         {
@@ -160,7 +165,7 @@ internal static class PresentationService
         return legacy is not null && legacy.GetAttribute("val", string.Empty).Value == "1";
     }
 
-    private static string GetSlideTitle(Slide slide)
+    public static string GetSlideTitle(Slide slide)
     {
         var title = string.Empty;
 

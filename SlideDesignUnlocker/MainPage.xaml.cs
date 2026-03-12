@@ -50,11 +50,11 @@ public sealed partial class MainPage : Page
         App.MainWindow.PresentationName = null;
     }
 
-    internal void SaveFile(SplitButton _, SplitButtonClickEventArgs e) => this.SaveFile();
+    internal async void SaveFile(SplitButton _, SplitButtonClickEventArgs e) => await this.SaveFileAsync();
 
-    internal void SaveFile(object _, RoutedEventArgs e) => this.SaveFile();
+    internal async void SaveFile(object _, RoutedEventArgs e) => await this.SaveFileAsync();
 
-    private async void SaveFile()
+    private async Task SaveFileAsync()
     {
         if (string.IsNullOrWhiteSpace(this.ViewModel.FilePath))
         {
@@ -220,7 +220,7 @@ public sealed partial class MainPage : Page
 
             if (result == ContentDialogResult.Primary)
             {
-                this.SaveFile();
+                await this.SaveFileAsync();
 
                 // If save failed or was cancelled, don't open
                 if (this.ViewModel.SlidesChanged)
@@ -265,7 +265,28 @@ public sealed partial class MainPage : Page
 
         App.MainWindow.PresentationName = Path.GetFileName(this.ViewModel.FilePath);
 
-        ThreadPool.QueueUserWorkItem(PresentationService.LoadPresentation, this.ViewModel, false);
+        var filePath = this.ViewModel.FilePath!;
+        ThreadPool.QueueUserWorkItem(_ =>
+        {
+            var slides = PresentationService.LoadSlides(filePath);
+
+            if (slides is null)
+            {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    this.ViewModel.Error = "Could not parse this presentation correctly";
+                    this.ViewModel.Loading = false;
+                });
+                return;
+            }
+
+            foreach (var slide in slides)
+            {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() => this.ViewModel.Slides.Add(slide));
+            }
+
+            App.MainWindow.DispatcherQueue.TryEnqueue(() => { this.ViewModel.Loading = false; });
+        });
     }
 
     private static string? ComputeFileHash(string filePath)
